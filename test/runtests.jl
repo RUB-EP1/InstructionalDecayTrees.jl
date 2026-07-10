@@ -11,6 +11,7 @@ include("composite_instructions.jl")
 # Include numerical tests
 include("gj_numerical.jl")
 include("tracking.jl")
+include("spin_tracking.jl")
 include("crosscheck_json.jl")
 
 @testset "Compact instruction display" begin

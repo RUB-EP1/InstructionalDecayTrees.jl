@@ -38,6 +38,15 @@ export LorentzTracker,
     wigner_zyz
 include("lorentz_tracker.jl")
 
+# spin_state.jl
+export SpinState,
+    Helicity,
+    Canonical,
+    spin_state,
+    to_basis,
+    projections
+include("spin_state.jl")
+
 # tracked_state.jl
 export TrackedState,
     init_tracked_state,

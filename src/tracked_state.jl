@@ -1,23 +1,32 @@
 """
-    TrackedState(objs, tracker::LorentzTracker)
+    TrackedState(objs, tracker::LorentzTracker[, spins])
 
-Carries both physics objects and an accumulated Lorentz tracker through
-`apply_decay_instruction` dispatch.
+Carries physics objects, an accumulated Lorentz tracker, and an optional collection
+of [`SpinState`](@ref)s through `apply_decay_instruction` dispatch.
+
+`spins` is a `NamedTuple` (name → `SpinState`) or an empty `(;)` when no spin is
+tracked. Each spin evolves alongside the four-vectors under every frame instruction.
 """
-struct TrackedState{O,L}
+struct TrackedState{O,L,S}
     objs::O
     tracker::L
+    spins::S
 end
 
+# Backwards-compatible constructor: no tracked spins.
+TrackedState(objs, tracker) = TrackedState(objs, tracker, (;))
+
 """
-    init_tracked_state(objs; T=Float64)
+    init_tracked_state(objs; T=Float64, spins=(;))
 
 Create a [`TrackedState`](@ref) with `objs` and an identity [`LorentzTracker`](@ref).
 
 Use this when you want `apply_decay_instruction` to return both transformed
-objects and the accumulated Lorentz transformation.
+objects and the accumulated Lorentz transformation. Pass `spins` (a `NamedTuple` of
+[`SpinState`](@ref)s) to additionally track spin coefficients.
 """
-init_tracked_state(objs; T::Type{<:Real}=Float64) = TrackedState(objs, LorentzTracker(T))
+init_tracked_state(objs; T::Type{<:Real}=Float64, spins=(;)) =
+    TrackedState(objs, LorentzTracker(T), spins)
 
 _as_column(p::FourVector) = [p.px, p.py, p.pz, p.E]
 
@@ -51,7 +60,8 @@ function _apply_step_with_tracking(state::TrackedState, transform; U_step=nothin
     # Tracking is generic: infer the linear map by transforming basis vectors
     # and left-compose with the previously accumulated map.
     new_tracker = LorentzTracker(M_step * state.tracker.Λ, U_step * state.tracker.U)
-    return TrackedState(new_objs, new_tracker)
+    new_spins = map(sp -> _evolve_spin(sp, transform, U_step), state.spins)
+    return TrackedState(new_objs, new_tracker, new_spins)
 end
 
 function apply_decay_instruction(instr::ToHelicityFrame, state::TrackedState)
@@ -85,7 +95,14 @@ function apply_decay_instruction(instr::PlaneAlign, state::TrackedState)
     axis_z = get_fourvector(state.objs, instr.z_idx)
     axis_x = get_fourvector(state.objs, instr.x_idx)
     transform = p -> rotate_to_plane(p, axis_z, axis_x)
-    return (_apply_step_with_tracking(state, transform), (;))
+    # Explicit, phase-correct SU(2) for the plane-alignment rotation. The angles
+    # come from the vectors (not from decoding the product matrix), so the spinor
+    # branch is determined. Matches rotate_to_plane's ZYZ convention.
+    ϕ_z = azimuthal_angle(axis_z)
+    θ_z = polar_angle(axis_z)
+    α = azimuthal_angle(axis_x |> Rz(-ϕ_z) |> Ry(-θ_z))
+    U_step = _su2_rz(-α) * _su2_ry(-θ_z) * _su2_rz(-ϕ_z)
+    return (_apply_step_with_tracking(state, transform; U_step = U_step), (;))
 end
 
 function apply_decay_instruction(instr::ToGottfriedJacksonFrame, state::TrackedState)
@@ -99,7 +116,7 @@ end
 
 function _apply_measure_instruction(instr::AbstractMeasureInstruction, state::TrackedState)
     (objs_after, results) = apply_decay_instruction(instr, state.objs)
-    return (TrackedState(objs_after, state.tracker), results)
+    return (TrackedState(objs_after, state.tracker, state.spins), results)
 end
 
 for T in (
