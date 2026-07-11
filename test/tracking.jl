@@ -153,6 +153,52 @@ end
     @test ang.ψ ≈ (ψ0 + 2π) atol = 1e-12
 end
 
+@testset "SU2 ZYZ decode is faithful (rebuilds U, not -U)" begin
+    # Regression: wrapping ϕ into (-π, π] without compensating ψ flipped the
+    # sign of the rebuilt SU(2) matrix for ~1/4 of the group.
+    rebuild(a) = InstructionalDecayTrees._su2_rz(a.ϕ) *
+                 InstructionalDecayTrees._su2_ry(a.θ) *
+                 InstructionalDecayTrees._su2_rz(a.ψ)
+    for ϕ0 in (-3.5π, -1.5π, -0.4, 0.7, 1.5π, 3π / 2, 3.4π),
+        θ0 in (1e-14, 0.3, 1.1, 2.6, π - 1e-14),
+        ψ0 in (-3π, -0.9, 1.7, 2.5π)
+
+        U = InstructionalDecayTrees._su2_rz(ϕ0) *
+            InstructionalDecayTrees._su2_ry(θ0) *
+            InstructionalDecayTrees._su2_rz(ψ0)
+        a = InstructionalDecayTrees._decode_rotation_zyz_su2(U)
+        @test rebuild(a) ≈ U atol = 1e-10
+        # decoded angles stay in the documented ranges
+        @test -π < a.ϕ <= π + 1e-12
+        @test 0 <= a.θ <= π
+        @test -π - 1e-12 <= a.ψ < 3π + 1e-12
+    end
+end
+
+@testset "PlaneAlign tracks an explicit phase-correct SU2" begin
+    p1 = FourVector(0.3, 0.2, 0.1; M = 0.2)
+    p2 = FourVector(-0.1, 0.4, -0.3; M = 0.4)
+    p3 = FourVector(-0.2, -0.6, 0.2; M = 0.3)
+    (state, _) = apply_decay_instruction(
+        (PlaneAlign(1, 2),), init_tracked_state((p1, p2, p3)))
+
+    # Explicit SU2 built from the axis angles (branch determined by the vectors)
+    ϕ_z = azimuthal_angle(p1)
+    θ_z = polar_angle(p1)
+    α = azimuthal_angle(p2 |> Rz(-ϕ_z) |> Ry(-θ_z))
+    U_explicit = InstructionalDecayTrees._su2_rz(-α) *
+                 InstructionalDecayTrees._su2_ry(-θ_z) *
+                 InstructionalDecayTrees._su2_rz(-ϕ_z)
+
+    # tracked U is exactly the explicit one (no ± ambiguity), and its SO(3)
+    # image agrees with the four-vector rotation matrix
+    @test state.tracker.U ≈ U_explicit atol = 1e-12
+    R = [real(0.5 * tr(σi * state.tracker.U * σj * state.tracker.U'))
+         for σi in (ComplexF64[0 1; 1 0], ComplexF64[0 -im; im 0], ComplexF64[1 0; 0 -1]),
+             σj in (ComplexF64[0 1; 1 0], ComplexF64[0 -im; im 0], ComplexF64[1 0; 0 -1])]
+    @test R ≈ state.tracker.Λ[1:3, 1:3] atol = 1e-10
+end
+
 @testset "SO3 and SU2 Wigner decoders agree on pure rotations" begin
     wrap2(a, b) = mod(a - b + π, 2π) - π
     wrap4(a, b) = mod(a - b + 2π, 4π) - 2π

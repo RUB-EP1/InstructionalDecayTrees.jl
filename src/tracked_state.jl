@@ -85,7 +85,15 @@ function apply_decay_instruction(instr::PlaneAlign, state::TrackedState)
     axis_z = get_fourvector(state.objs, instr.z_idx)
     axis_x = get_fourvector(state.objs, instr.x_idx)
     transform = p -> rotate_to_plane(p, axis_z, axis_x)
-    return (_apply_step_with_tracking(state, transform), (;))
+    # Explicit, phase-correct SU(2) for the plane-alignment rotation. The angles
+    # come from the vectors themselves (not from decoding the product matrix),
+    # so the spinor ±1 branch is determined; the inferred-U_step fallback would
+    # go through the SO(3) block and lose it.
+    ϕ_z = azimuthal_angle(axis_z)
+    θ_z = polar_angle(axis_z)
+    α = azimuthal_angle(axis_x |> Rz(-ϕ_z) |> Ry(-θ_z))
+    U_step = _su2_rz(-α) * _su2_ry(-θ_z) * _su2_rz(-ϕ_z)
+    return (_apply_step_with_tracking(state, transform; U_step = U_step), (;))
 end
 
 function apply_decay_instruction(instr::ToGottfriedJacksonFrame, state::TrackedState)
