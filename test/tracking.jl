@@ -188,6 +188,13 @@ end
     σs = (ComplexF64[0 1; 1 0], ComplexF64[0 -im; im 0], ComplexF64[1 0; 0 -1])
     R_adj = [real(0.5 * tr(σi * t.U * σj * t.U')) for σi in σs, σj in σs]
     @test R_adj ≈ t.Λ[1:3, 1:3] atol = 1e-10
+
+    # U_step is a required keyword: the SU(2) sign cannot be inferred from the
+    # vector action (2:1 cover), so a new frame instruction that forgets to
+    # provide it must fail loudly rather than track a branch-cut artifact.
+    st0 = init_tracked_state((q1, q2, q3))
+    @test_throws UndefKeywordError InstructionalDecayTrees._apply_step_with_tracking(
+        st0, identity)
 end
 
 @testset "SO3 and SU2 Wigner decoders agree on pure rotations" begin

@@ -40,16 +40,15 @@ function _step_matrix(transform, ::Type{T}) where {T<:Real}
     return M
 end
 
-function _apply_step_with_tracking(state::TrackedState, transform; U_step=nothing)
+function _apply_step_with_tracking(state::TrackedState, transform; U_step)
     new_objs = map(transform, state.objs)
     Tobj = typeof(first(state.objs).px)
+    # The 4x4 side is generic: the linear map is inferred by transforming basis
+    # vectors. The SU(2) side cannot be inferred — SU(2)→SO(3) is 2:1, so the
+    # vector action does not determine the spinor sign — hence U_step is a
+    # required keyword: every frame instruction must construct its SU(2)
+    # explicitly from the physical angles (issue #27).
     M_step = _step_matrix(transform, Tobj)
-    if U_step === nothing
-        d = _decode_lorentz_helicity_zyz_xyze(M_step)
-        U_step = _build_su2(d.ϕ, d.θ, d.ξ, d.ϕ_rf, d.θ_rf, d.ψ_rf)
-    end
-    # Tracking is generic: infer the linear map by transforming basis vectors
-    # and left-compose with the previously accumulated map.
     new_tracker = LorentzTracker(M_step * state.tracker.Λ, U_step * state.tracker.U)
     return TrackedState(new_objs, new_tracker)
 end
