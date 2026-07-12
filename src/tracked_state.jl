@@ -46,8 +46,6 @@ function _apply_step_with_tracking(state::TrackedState, transform; U_step)
     # The 4x4 side is generic: the linear map is inferred by transforming basis
     # vectors. The SU(2) side cannot be inferred — SU(2)→SO(3) is 2:1, so the
     # vector action does not determine the spinor sign — hence U_step is a
-    # required keyword: every frame instruction must construct its SU(2)
-    # explicitly from the physical angles (issue #27).
     M_step = _step_matrix(transform, Tobj)
     new_tracker = LorentzTracker(M_step * state.tracker.Λ, U_step * state.tracker.U)
     return TrackedState(new_objs, new_tracker)
@@ -84,16 +82,12 @@ function apply_decay_instruction(instr::PlaneAlign, state::TrackedState)
     axis_z = get_fourvector(state.objs, instr.z_idx)
     axis_x = get_fourvector(state.objs, instr.x_idx)
     transform = p -> rotate_to_plane(p, axis_z, axis_x)
-    # Explicit, phase-correct SU(2) for the plane-alignment rotation. The angles
-    # come from the axis vectors themselves, so the spinor ±1 branch is pinned
-    # and varies continuously with the kinematics; the inferred-U_step fallback
-    # would rebuild it from the SO(3) block, where the branch is an artifact of
-    # atan/acos ranges (issue #27).
+    # 
     ϕ_z = azimuthal_angle(axis_z)
     θ_z = polar_angle(axis_z)
     α = azimuthal_angle(axis_x |> Rz(-ϕ_z) |> Ry(-θ_z))
     U_step = _su2_rz(-α) * _su2_ry(-θ_z) * _su2_rz(-ϕ_z)
-    return (_apply_step_with_tracking(state, transform; U_step = U_step), (;))
+    return (_apply_step_with_tracking(state, transform; U_step), (;))
 end
 
 function apply_decay_instruction(instr::ToGottfriedJacksonFrame, state::TrackedState)
