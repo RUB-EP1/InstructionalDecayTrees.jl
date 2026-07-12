@@ -77,7 +77,7 @@ function apply_decay_instruction(instr::ToHelicityFrameParticle2, state::Tracked
 
     transform = p -> p |> Rz(-ϕ_inv) |> Ry(-θ_inv) |> Ry(-π) |> Bz(-γ)
     U_step = _su2_bz(-ξ) * _su2_ry(-π) * _su2_ry(-θ_inv) * _su2_rz(-ϕ_inv)
-    return (_apply_step_with_tracking(state, transform; U_step = U_step), (;))
+    return (_apply_step_with_tracking(state, transform; U_step), (;))
 end
 
 function apply_decay_instruction(instr::PlaneAlign, state::TrackedState)
