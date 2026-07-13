@@ -60,7 +60,7 @@ function apply_decay_instruction(instr::ToHelicityFrame, state::TrackedState)
     ξ = acosh(γ)
     transform = p -> transform_to_cmf(p, P_tot)
     U_step = _su2_bz(-ξ) * _su2_ry(-θ) * _su2_rz(-ϕ)
-    return (_apply_step_with_tracking(state, transform; U_step = U_step), (;))
+    return (_apply_step_with_tracking(state, transform; U_step), _empty_instruction_results)
 end
 
 function apply_decay_instruction(instr::ToHelicityFrameParticle2, state::TrackedState)
@@ -75,19 +75,18 @@ function apply_decay_instruction(instr::ToHelicityFrameParticle2, state::Tracked
 
     transform = p -> p |> Rz(-ϕ_inv) |> Ry(-θ_inv) |> Ry(-π) |> Bz(-γ)
     U_step = _su2_bz(-ξ) * _su2_ry(-π) * _su2_ry(-θ_inv) * _su2_rz(-ϕ_inv)
-    return (_apply_step_with_tracking(state, transform; U_step), (;))
+    return (_apply_step_with_tracking(state, transform; U_step), _empty_instruction_results)
 end
 
 function apply_decay_instruction(instr::PlaneAlign, state::TrackedState)
     axis_z = get_fourvector(state.objs, instr.z_idx)
     axis_x = get_fourvector(state.objs, instr.x_idx)
     transform = p -> rotate_to_plane(p, axis_z, axis_x)
-    # 
     ϕ_z = azimuthal_angle(axis_z)
     θ_z = polar_angle(axis_z)
     α = azimuthal_angle(axis_x |> Rz(-ϕ_z) |> Ry(-θ_z))
     U_step = _su2_rz(-α) * _su2_ry(-θ_z) * _su2_rz(-ϕ_z)
-    return (_apply_step_with_tracking(state, transform; U_step), (;))
+    return (_apply_step_with_tracking(state, transform; U_step), _empty_instruction_results)
 end
 
 function apply_decay_instruction(instr::ToGottfriedJacksonFrame, state::TrackedState)
