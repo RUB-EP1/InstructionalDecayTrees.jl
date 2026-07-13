@@ -113,7 +113,13 @@ function _decode_rotation_zyz_su2(U::AbstractMatrix; atol::Real=_default_atol(U)
         ψ = (σ - δ) / 2
     end
 
-    return (ϕ = _wrap2pi(real(ϕ)), θ = real(θ), ψ = normalize_psi(real(ψ)))
+    # Rz has period 4π in SU(2), so wrapping ϕ into (-π, π] can shift it by
+    # ±2π, which flips the sign of Rz(ϕ)·Ry(θ)·Rz(ψ). Shift ψ by the same
+    # amount before normalizing (normalize_psi is 4π-periodic, hence
+    # sign-preserving) so the returned angles reconstruct U exactly, never -U.
+    ϕw = _wrap2pi(real(ϕ))
+    ψc = real(ψ) + (real(ϕ) - ϕw)
+    return (ϕ = ϕw, θ = real(θ), ψ = normalize_psi(ψc))
 end
 
 function _decode_boost_xyze(M::AbstractMatrix; atol::Real=_default_atol(M))

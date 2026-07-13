@@ -197,6 +197,41 @@ end
         st0, identity)
 end
 
+@testset "SU2 ZYZ decode is faithful (rebuilds U, not -U)" begin
+    # Regression for issue #26: wrapping ϕ into (-π, π] without compensating ψ
+    # flipped the sign of the rebuilt SU(2) matrix whenever the natural azimuth
+    # fell outside (-π, π] (~1/4 of the group).
+    rebuild(a) = InstructionalDecayTrees._su2_rz(a.ϕ) *
+                 InstructionalDecayTrees._su2_ry(a.θ) *
+                 InstructionalDecayTrees._su2_rz(a.ψ)
+
+    # the minimal repro from the issue: a 270° rotation about z
+    U270 = InstructionalDecayTrees._su2_rz(3π / 2) * InstructionalDecayTrees._su2_ry(1.0)
+    @test rebuild(InstructionalDecayTrees._decode_rotation_zyz_su2(U270)) ≈ U270 atol = 1e-12
+
+    # continuity across the ϕ = π branch cut
+    for ϕ0 in (π - 1e-6, π + 1e-6)
+        U = InstructionalDecayTrees._su2_rz(ϕ0) * InstructionalDecayTrees._su2_ry(1.0)
+        @test rebuild(InstructionalDecayTrees._decode_rotation_zyz_su2(U)) ≈ U atol = 1e-9
+    end
+
+    # grid over the full 4π-periodic ranges, including the θ -> 0, π edges
+    for ϕ0 in (-3.5π, -1.5π, -0.4, 0.7, 1.5π, 3π / 2, 3.4π),
+        θ0 in (1e-14, 0.3, 1.1, 2.6, π - 1e-14),
+        ψ0 in (-3π, -0.9, 1.7, 2.5π)
+
+        U = InstructionalDecayTrees._su2_rz(ϕ0) *
+            InstructionalDecayTrees._su2_ry(θ0) *
+            InstructionalDecayTrees._su2_rz(ψ0)
+        a = InstructionalDecayTrees._decode_rotation_zyz_su2(U)
+        @test rebuild(a) ≈ U atol = 1e-10
+        # decoded angles stay in the documented ranges
+        @test -π < a.ϕ <= π + 1e-12
+        @test 0 <= a.θ <= π
+        @test -π - 1e-12 <= a.ψ < 3π + 1e-12
+    end
+end
+
 @testset "SO3 and SU2 Wigner decoders agree on pure rotations" begin
     wrap2(a, b) = mod(a - b + π, 2π) - π
     wrap4(a, b) = mod(a - b + 2π, 4π) - 2π
