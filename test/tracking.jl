@@ -65,7 +65,7 @@ end
     @test atol32 ≈ 10 * eps(Float32)
     @test cmp.relative.Λ ≈ Matrix{Float32}(I, 4, 4) atol = atol32
     @test wigner_zyz(cmp.relative) isa NamedTuple
-    @test InstructionalDecayTrees._wigner_zyz_su2(cmp.relative) isa NamedTuple
+    @test InstructionalDecayTrees._wigner_zyz_flip(cmp.relative) isa NamedTuple
 end
 
 @testset "Explicit SU2 step uses rapidity (not gamma)" begin
@@ -243,17 +243,58 @@ end
         t = LorentzTracker(Λ, U)
 
         a_so3 = InstructionalDecayTrees._wigner_zyz_so3(t)
-        a_su2 = InstructionalDecayTrees._wigner_zyz_su2(t)
-        a_mix = wigner_zyz(t)
+        a_su2 = wigner_zyz(t)
+        a_flip = InstructionalDecayTrees._wigner_zyz_flip(t)
 
         @test abs(wrap2(a_so3.ϕ, a_su2.ϕ)) < 1e-12
         @test abs(wrap2(a_so3.θ, a_su2.θ)) < 1e-12
         @test abs(wrap4(a_so3.ψ, a_su2.ψ)) < 1e-12
 
-        @test abs(wrap2(a_mix.ϕ, a_su2.ϕ)) < 1e-12
-        @test abs(wrap2(a_mix.θ, a_su2.θ)) < 1e-12
-        @test abs(wrap4(a_mix.ψ, a_su2.ψ)) < 1e-12
+        @test abs(wrap2(a_flip.ϕ, a_su2.ϕ)) < 1e-12
+        @test abs(wrap2(a_flip.θ, a_su2.θ)) < 1e-12
+        @test abs(wrap4(a_flip.ψ, a_su2.ψ)) < 1e-12
     end
+end
+
+@testset "Legacy flip decoder cross-checks wigner_zyz (both branches, 4π range)" begin
+    rebuild(a) = InstructionalDecayTrees._su2_rz(a.ϕ) *
+                 InstructionalDecayTrees._su2_ry(a.θ) *
+                 InstructionalDecayTrees._su2_rz(a.ψ)
+    for ϕ0 in (-1.5π, -0.4, 0.7, 3π / 4, 1.5π), θ0 in (0.3, 1.1, 2.6),
+        ψ0 in (-3π, -0.9, 1.7, 2.5π), sgn in (1, -1)
+
+        Λ = InstructionalDecayTrees._rz_xyze(ϕ0) *
+            InstructionalDecayTrees._ry_xyze(θ0) *
+            InstructionalDecayTrees._rz_xyze(ψ0)
+        U = sgn * InstructionalDecayTrees._build_su2(0.0, 0.0, 0.0, ϕ0, θ0, ψ0)
+        t = LorentzTracker(Λ, U)
+
+        a = wigner_zyz(t)
+        b = InstructionalDecayTrees._wigner_zyz_flip(t)
+
+        # both are spinor-branch exact: the angles rebuild U, never -U
+        @test rebuild(a) ≈ U atol = 1e-10
+        @test rebuild(b) ≈ U atol = 1e-10
+        # and away from the ϕ = ±π seam they return the same representative
+        @test a.ϕ ≈ b.ϕ atol = 1e-10
+        @test a.θ ≈ b.θ atol = 1e-10
+        @test a.ψ ≈ b.ψ atol = 1e-10
+    end
+end
+
+@testset "wigner_zyz rejects boosted trackers" begin
+    Λ = InstructionalDecayTrees._rz_xyze(0.3) *
+        InstructionalDecayTrees._ry_xyze(0.8) *
+        InstructionalDecayTrees._bz_xyze(0.6)
+    U = InstructionalDecayTrees._su2_rz(0.3) *
+        InstructionalDecayTrees._su2_ry(0.8) *
+        InstructionalDecayTrees._su2_bz(0.6)
+    t = LorentzTracker(Λ, U)
+
+    @test_throws ArgumentError wigner_zyz(t)
+    # general transforms are decoded (branch-blind) by decode_lorentz_helicity
+    d = decode_lorentz_helicity(t)
+    @test d.ξ ≈ 0.6 atol = 1e-12
 end
 
 @testset "Public Wigner API handles near-pure small-mass rotations" begin
