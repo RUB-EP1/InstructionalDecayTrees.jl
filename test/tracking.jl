@@ -247,7 +247,7 @@ end
         InstructionalDecayTrees._su2_bz(0.6)
     t = LorentzTracker(Λ, U)
 
-    @test_throws ErrorException wigner_zyz(t)
+    @test_throws ArgumentError wigner_zyz(t)
     # general transforms are decoded (branch-blind) by decode_lorentz_helicity
     d = decode_lorentz_helicity(t)
     @test d.ξ ≈ 0.6 atol = 1e-12

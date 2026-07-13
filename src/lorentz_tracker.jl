@@ -77,9 +77,9 @@ For an instructive comparison of SO(3) (`Λ`) vs SU(2) (`U`) decoders, see
 """
 function wigner_zyz(t::LorentzTracker; atol::Real=_default_atol(t.Λ))
     b = _decode_boost_xyze(t.Λ; atol = atol)
-    abs(b.ξ) < atol || error(
+    abs(b.ξ) < atol || throw(ArgumentError(
         "wigner_zyz decodes Wigner angles of a pure rotation, but this tracker " *
-        "carries a boost (ξ ≈ $(b.ξ)). Use decode_lorentz_helicity for general transforms.")
+        "carries a boost (ξ ≈ $(b.ξ)). Use decode_lorentz_helicity for general transforms."))
     return _decode_rotation_zyz_su2(t.U; atol = atol)
 end
 
