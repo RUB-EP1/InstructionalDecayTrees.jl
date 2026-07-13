@@ -11,8 +11,14 @@ This is the public execution entry point. The `instr` can be:
 
 Nested `CompositeInstruction`s are executed recursively, maintaining encapsulation
 of reusable instruction groups.
+
+Every method returns `(state_or_objs, measurement_results)`. Frame transforms
+produce no measurements, so they use `_empty_instruction_results`.
 """
 function apply_decay_instruction end
+
+# Empty measurement results returned by frame-transform instructions.
+const _empty_instruction_results = (;)
 
 # Convenience: accept tuples and wrap them in CompositeInstruction
 function apply_decay_instruction(instr::Tuple, objs)
@@ -21,7 +27,7 @@ end
 
 # Base case: empty composite instruction
 function apply_decay_instruction(instr::CompositeInstruction{<:Tuple{}}, objs)
-    return (objs, (;))
+    return (objs, _empty_instruction_results)
 end
 
 # Execute composite instruction: iterate over tuple, recurse only for nested composites

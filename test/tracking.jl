@@ -153,6 +153,50 @@ end
     @test ang.ψ ≈ (ψ0 + 2π) atol = 1e-12
 end
 
+@testset "PlaneAlign tracks an explicit phase-correct SU2" begin
+    # Regression for issue #27: the inferred-U_step fallback rebuilds the SU(2)
+    # from the SO(3) block, whose ±1 branch is an atan/acos artifact and flips
+    # discontinuously under smooth kinematics.
+    su2_explicit(axis_z, axis_x) = begin
+        ϕ_z = azimuthal_angle(axis_z)
+        θ_z = polar_angle(axis_z)
+        α = azimuthal_angle(axis_x |> Rz(-ϕ_z) |> Ry(-θ_z))
+        InstructionalDecayTrees._su2_rz(-α) *
+        InstructionalDecayTrees._su2_ry(-θ_z) *
+        InstructionalDecayTrees._su2_rz(-ϕ_z)
+    end
+    tracked_U(objs) = begin
+        (st, _) = apply_decay_instruction((PlaneAlign(1, 2),), init_tracked_state(objs))
+        st.tracker
+    end
+
+    q2 = FourVector(-0.6, 0.2, 0.1; E = 1.5)
+    q3 = FourVector(0.1, 0.3, -0.2; E = 1.0)
+
+    # continuity: before the fix the tracked U flipped sign across this ε-step
+    # (ϕ_z ≈ 2.8198…) while Λ stayed continuous
+    for ϕ in (2.819841, 2.819843)
+        q1 = FourVector(0.5 * cos(ϕ), 0.5 * sin(ϕ), 0.4; E = 2.0)
+        t = tracked_U((q1, q2, q3))
+        @test t.U ≈ su2_explicit(q1, q2) atol = 1e-10   # exact, no ± ambiguity
+    end
+
+    # generic configuration: exactness and SO(3)-image consistency with Λ
+    q1 = FourVector(0.3, -0.4, 0.5; E = 2.0)
+    t = tracked_U((q1, q2, q3))
+    @test t.U ≈ su2_explicit(q1, q2) atol = 1e-12
+    σs = (ComplexF64[0 1; 1 0], ComplexF64[0 -im; im 0], ComplexF64[1 0; 0 -1])
+    R_adj = [real(0.5 * tr(σi * t.U * σj * t.U')) for σi in σs, σj in σs]
+    @test R_adj ≈ t.Λ[1:3, 1:3] atol = 1e-10
+
+    # U_step is a required keyword: the SU(2) sign cannot be inferred from the
+    # vector action (2:1 cover), so a new frame instruction that forgets to
+    # provide it must fail loudly rather than track a branch-cut artifact.
+    st0 = init_tracked_state((q1, q2, q3))
+    @test_throws UndefKeywordError InstructionalDecayTrees._apply_step_with_tracking(
+        st0, identity)
+end
+
 @testset "SU2 ZYZ decode is faithful (rebuilds U, not -U)" begin
     # Regression for issue #26: wrapping ϕ into (-π, π] without compensating ψ
     # flipped the sign of the rebuilt SU(2) matrix whenever the natural azimuth

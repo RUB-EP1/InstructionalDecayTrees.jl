@@ -27,7 +27,7 @@ function apply_decay_instruction(instr::ToHelicityFrame, objs)
     # Apply boost to all
     new_objs = map(p -> transform_to_cmf(p, P_tot), objs)
 
-    return (new_objs, (;))
+    return (new_objs, _empty_instruction_results)
 end
 
 function apply_decay_instruction(instr::ToHelicityFrameParticle2, objs)
@@ -45,7 +45,7 @@ function apply_decay_instruction(instr::ToHelicityFrameParticle2, objs)
     transform = p -> p |> Rz(-ϕ_inv) |> Ry(-θ_inv) |> Ry(-π) |> Bz(-γ)
 
     new_objs = map(transform, objs)
-    return (new_objs, (;))
+    return (new_objs, _empty_instruction_results)
 end
 
 function apply_decay_instruction(instr::PlaneAlign, objs)
@@ -55,7 +55,7 @@ function apply_decay_instruction(instr::PlaneAlign, objs)
 
     final_objs = map(p -> rotate_to_plane(p, axis_z, axis_x), objs)
 
-    return (final_objs, (;))
+    return (final_objs, _empty_instruction_results)
 end
 
 # CompositeInstruction handling is now in execution.jl
@@ -73,7 +73,7 @@ function apply_decay_instruction(instr::ToGottfriedJacksonFrame, objs)
     plane_instr = PlaneAlign(instr.beam_idx, target_idx_negated)
     (final_objs, _) = apply_decay_instruction(plane_instr, objs_after_boost)
 
-    return (final_objs, (;))
+    return (final_objs, _empty_instruction_results)
 end
 
 function apply_decay_instruction(instr::MeasurePolar, objs)
