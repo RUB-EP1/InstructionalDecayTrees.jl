@@ -12,6 +12,7 @@ include("composite_instructions.jl")
 include("gj_numerical.jl")
 include("tracking.jl")
 include("crosscheck_json.jl")
+include("crossproduct_axes.jl")
 
 @testset "Compact instruction display" begin
     @test repr(ToHelicityFrame((1, 2))) == "ToHelicityFrame((1, 2))"

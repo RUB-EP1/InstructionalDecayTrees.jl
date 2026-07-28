@@ -78,6 +78,29 @@ function apply_decay_instruction(instr::ToHelicityFrameParticle2, state::Tracked
     return (_apply_step_with_tracking(state, transform; U_step), _empty_instruction_results)
 end
 
+function apply_decay_instruction(instr::ToRestFrame, state::TrackedState)
+    P = _momentum(state.objs, instr.indices)
+    ϕ = azimuthal_angle(P)
+    θ = polar_angle(P)
+    γ = boost_gamma(P)
+    # FourVectors uses gamma-factor parameterization for Bz; SU2 boost uses rapidity.
+    ξ = acosh(max(γ, one(γ)))
+    transform = p -> boost_to_rest(p, P)
+    # Same factors as ToHelicityFrame, sandwiched by the alignment rotation and
+    # its inverse — that sandwich is what makes the boost pure.
+    U_step = _su2_rz(ϕ) * _su2_ry(θ) * _su2_bz(-ξ) * _su2_ry(-θ) * _su2_rz(-ϕ)
+    return (_apply_step_with_tracking(state, transform; U_step), _empty_instruction_results)
+end
+
+# PlantLabAxes and TransportAxes rewrite an axis slot but perform no Lorentz
+# transformation, so the accumulated tracker is carried through unchanged.
+for T in (:PlantLabAxes, :TransportAxes)
+    @eval function apply_decay_instruction(instr::$T, state::TrackedState)
+        (objs_after, results) = apply_decay_instruction(instr, state.objs)
+        return (TrackedState(objs_after, state.tracker), results)
+    end
+end
+
 function apply_decay_instruction(instr::PlaneAlign, state::TrackedState)
     axis_z = get_fourvector(state.objs, instr.z_idx)
     axis_x = get_fourvector(state.objs, instr.x_idx)
@@ -109,6 +132,7 @@ for T in (
     :MeasureMassCosThetaPhi,
     :MeasureCosThetaPhi,
     :MeasureInvariant,
+    :MeasureEulerZXZ,
 )
     @eval apply_decay_instruction(instr::$T, state::TrackedState) =
         _apply_measure_instruction(instr, state)
