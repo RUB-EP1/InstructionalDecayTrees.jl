@@ -57,6 +57,39 @@ composite = CompositeInstruction((
 final_objs, results = apply_decay_instruction(composite, objs)
 ```
 
+### Forked programs
+
+A decay tree can share a frame prefix and then evaluate several child frames
+with [`Fork`](@ref):
+
+```julia
+program = (
+    ToHelicityFrame((1, 2, 3, 4)),
+    MeasureCosThetaPhi(:root, (1, 2)),
+    Fork((
+        (
+            ToHelicityFrame((1, 2)),
+            MeasureCosThetaPhi(:left, 1),
+        ),
+        (
+            ToHelicityFrameParticle2((3, 4)),
+            MeasureCosThetaPhi(:right, 3),
+        ),
+    )),
+)
+```
+
+Every branch starts from the state entering the fork, including its accumulated
+Lorentz and SU(2) tracker when using [`TrackedState`](@ref). Sibling transforms
+are isolated, branch measurements are merged in tuple order, and execution
+continues after the fork in the unchanged parent frame. Forks can be nested to
+represent deeper trees.
+
+Measurement tags must be unique throughout a forked program. A duplicate in
+one branch, between sibling branches, or between a branch and its surrounding
+program raises an `ArgumentError` instead of overwriting a result. Purely linear
+programs retain their existing merge behavior.
+
 For path comparisons, use [`compare_instruction_paths`](@ref) and extract
 relative Wigner angles with [`wigner_zyz`](@ref).
 

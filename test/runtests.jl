@@ -7,6 +7,7 @@ include("proofs.jl")
 
 # Include composite instruction tests
 include("composite_instructions.jl")
+include("forked_execution.jl")
 
 # Include numerical tests
 include("gj_numerical.jl")

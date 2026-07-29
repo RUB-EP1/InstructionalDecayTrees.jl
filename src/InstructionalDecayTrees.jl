@@ -17,7 +17,7 @@ export ToHelicityFrame,
 include("instructions.jl")
 
 # composite_instructions.jl
-export CompositeInstruction
+export CompositeInstruction, Fork
 include("composite_instructions.jl")
 
 # execution.jl
