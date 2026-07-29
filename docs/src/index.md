@@ -18,8 +18,10 @@ which is registered in the General registry and is installed automatically.
 
 - **Declarative:** describe boosts, rotations, and angle measurements as an
   instruction path instead of hand-written matrix algebra.
-- **Type-stable:** instruction sequences are tuples of concrete types; results
-  are `NamedTuple`s that the Julia compiler can specialize on.
+- **Specialization-friendly:** instruction sequences and fork branches are
+  tuples of concrete types. Result inference follows the instruction methods;
+  built-in measurement tags are runtime `Symbol`s, so their `NamedTuple` keys
+  may remain dynamic to the compiler.
 - **Modular backend:** the core DSL is backend-agnostic; the current physics
   backend is `FourVectors.jl`.
 - **Unified execution:** [`apply_decay_instruction`](@ref) is the single public
@@ -79,11 +81,13 @@ program = (
 )
 ```
 
-Every branch starts from the state entering the fork, including its accumulated
-Lorentz and SU(2) tracker when using [`TrackedState`](@ref). Sibling transforms
-are isolated, branch measurements are merged in tuple order, and execution
-continues after the fork in the unchanged parent frame. Forks can be nested to
-represent deeper trees.
+Every branch starts from [`fork_branch_state`](@ref) applied to the state
+entering the fork, including its accumulated Lorentz and SU(2) tracker when
+using [`TrackedState`](@ref). The default snapshot uses `deepcopy`, so sibling
+transforms are isolated and execution continues after the fork in the unchanged
+parent frame. Backends with immutable or persistent states can overload
+`fork_branch_state` to return the original state and avoid copying. Forks can
+be nested to represent deeper trees.
 
 Measurement tags must be unique throughout a forked program. A duplicate in
 one branch, between sibling branches, or between a branch and its surrounding

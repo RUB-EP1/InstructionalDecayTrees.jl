@@ -23,9 +23,10 @@ Execute several instruction `branches` independently from the same incoming
 state and merge their measurement results.
 
 `branches` is a tuple whose elements are instructions, instruction tuples, or
-[`CompositeInstruction`](@ref)s. Branches run in tuple order. Transformations
-inside one branch are never visible to its siblings, and the state returned by
-the `Fork` is the unchanged incoming parent state. Forks may be nested.
+[`CompositeInstruction`](@ref)s. Branches run in tuple order. Each starts from
+[`fork_branch_state`](@ref) applied to the incoming state, so transformations
+inside one branch are never visible to its siblings. The state returned by the
+`Fork` is the unchanged incoming parent state. Forks may be nested.
 
 Measurement tags must be unique throughout any program containing a `Fork`;
 duplicate tags raise an `ArgumentError`. The tuple representation is retained

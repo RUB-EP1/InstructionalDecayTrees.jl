@@ -22,6 +22,7 @@ include("composite_instructions.jl")
 
 # execution.jl
 export apply_decay_instruction,
+    fork_branch_state,
     execute_decay_program  # Deprecated, use apply_decay_instruction instead
 include("execution.jl")
 

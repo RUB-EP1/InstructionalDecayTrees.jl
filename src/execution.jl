@@ -21,17 +21,28 @@ function apply_decay_instruction end
 # Empty measurement results returned by frame-transform instructions.
 const _empty_instruction_results = (;)
 
-# A fork makes result merging strict for its entire enclosing instruction tree.
-# Carry the policy as a `Val` so statically shaped tuples remain specialized.
-@inline _fork_mode(::Any) = Val(false)
-@inline _fork_mode(::Fork) = Val(true)
-@inline _fork_mode(instr::CompositeInstruction) = _fork_mode(instr.instructions)
-@inline _fork_mode(::Tuple{}) = Val(false)
-@inline _fork_mode(instrs::Tuple) =
-    _combine_fork_modes(_fork_mode(first(instrs)), _fork_mode(Base.tail(instrs)))
+"""
+    fork_branch_state(state)
 
-@inline _combine_fork_modes(::Val{true}, ::Val) = Val(true)
-@inline _combine_fork_modes(::Val{false}, tail_mode::Val) = tail_mode
+Create the independent state snapshot used to start one [`Fork`](@ref) branch.
+
+The default uses `deepcopy` so mutable state in one branch cannot affect its
+siblings or the parent returned after the fork. Backends whose states are
+immutable or persistent may overload this function and safely return `state`
+itself to avoid the copy.
+"""
+fork_branch_state(state) = deepcopy(state)
+
+_contains_fork(::Any) = false
+_contains_fork(::Fork) = true
+_contains_fork(instr::CompositeInstruction) = _contains_fork(instr.instructions)
+
+function _contains_fork(instructions::Tuple)
+    for instruction in instructions
+        _contains_fork(instruction) && return true
+    end
+    return false
+end
 
 function _merge_instruction_results(left::NamedTuple, right::NamedTuple, ::Val{false})
     return merge(left, right)
@@ -47,45 +58,33 @@ function _merge_instruction_results(left::NamedTuple, right::NamedTuple, ::Val{t
 end
 
 _apply_instruction(instr, state, ::Val) = apply_decay_instruction(instr, state)
-_apply_instruction(instr::Tuple, state, mode::Val) =
+_apply_instruction(instr::Tuple, state, mode::Val{true}) =
     _apply_instruction_sequence(instr, state, mode)
-_apply_instruction(instr::CompositeInstruction, state, mode::Val) =
+_apply_instruction(instr::CompositeInstruction, state, mode::Val{true}) =
     _apply_instruction_sequence(instr.instructions, state, mode)
 _apply_instruction(instr::Fork, state, ::Val) = _apply_fork(instr, state)
-
-function _apply_instruction_sequence(
-    ::Tuple{},
-    state,
-    ::Val,
-    results::NamedTuple=_empty_instruction_results,
-)
-    return (state, results)
-end
 
 function _apply_instruction_sequence(
     instructions::Tuple,
     state,
     mode::Val,
-    results::NamedTuple=_empty_instruction_results,
 )
-    instruction = first(instructions)
-    next_state, instruction_results = _apply_instruction(instruction, state, mode)
-    next_results = _merge_instruction_results(results, instruction_results, mode)
-    return _apply_instruction_sequence(
-        Base.tail(instructions),
-        next_state,
-        mode,
-        next_results,
-    )
+    current_state = state
+    all_results = _empty_instruction_results
+    for instruction in instructions
+        current_state, instruction_results =
+            _apply_instruction(instruction, current_state, mode)
+        all_results = _merge_instruction_results(all_results, instruction_results, mode)
+    end
+    return (current_state, all_results)
 end
 
 function apply_decay_instruction(instructions::Tuple, state)
-    mode = _fork_mode(instructions)
-    return _apply_instruction_sequence(instructions, state, mode)
+    return apply_decay_instruction(CompositeInstruction(instructions), state)
 end
 
 function apply_decay_instruction(instr::CompositeInstruction, state)
-    mode = _fork_mode(instr)
+    mode = Val(_contains_fork(instr))
     return _apply_instruction_sequence(instr.instructions, state, mode)
 end
 
@@ -102,7 +101,8 @@ function _apply_fork_branches(
     parent_state,
     results::NamedTuple=_empty_instruction_results,
 )
-    _, branch_results = _apply_instruction(first(branches), parent_state, Val(true))
+    branch_state = fork_branch_state(parent_state)
+    _, branch_results = _apply_instruction(first(branches), branch_state, Val(true))
     next_results = _merge_instruction_results(results, branch_results, Val(true))
     return _apply_fork_branches(Base.tail(branches), parent_state, next_results)
 end

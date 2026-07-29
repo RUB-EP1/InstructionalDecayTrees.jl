@@ -22,6 +22,40 @@ function InstructionalDecayTrees.apply_decay_instruction(
     return (state, NamedTuple{(Tag,)}((state.tracker,)))
 end
 
+struct MutateState <: InstructionalDecayTrees.AbstractInstruction
+    value::Int
+end
+
+function InstructionalDecayTrees.apply_decay_instruction(
+    instr::MutateState,
+    state::Vector{Int},
+)
+    push!(state, instr.value)
+    return (state, (;))
+end
+
+struct RecordLength{Tag} <: InstructionalDecayTrees.AbstractMeasureInstruction end
+
+function InstructionalDecayTrees.apply_decay_instruction(
+    ::RecordLength{Tag},
+    state::Vector,
+) where {Tag}
+    return (state, NamedTuple{(Tag,)}((length(state),)))
+end
+
+struct BundleOnly <: InstructionalDecayTrees.AbstractInstruction end
+
+function InstructionalDecayTrees.apply_decay_instruction(
+    ::CompositeInstruction{Tuple{BundleOnly}},
+    state,
+)
+    return (:specialized_composite, (;))
+end
+
+struct NoopStep <: InstructionalDecayTrees.AbstractInstruction end
+
+InstructionalDecayTrees.apply_decay_instruction(::NoopStep, state) = (state, (;))
+
 function fourvectors_approx(xs, ys; atol=1e-12)
     return all(
         isapprox(x.E, y.E; atol = atol) &&
@@ -53,6 +87,20 @@ const FORK_TEST_OBJECTS = (
     returned, results = apply_decay_instruction(Fork(()), state)
     @test returned === state
     @test isempty(results)
+end
+
+@testset "Fork snapshots mutable branch state" begin
+    parent = [0]
+    program = Fork((
+        (MutateState(1), RecordLength{:mutated_branch}()),
+        (RecordLength{:sibling_branch}(),),
+    ))
+
+    returned, results = apply_decay_instruction(program, parent)
+
+    @test returned === parent
+    @test parent == [0]
+    @test results == (mutated_branch = 2, sibling_branch = 1)
 end
 
 @testset "Balanced fork matches independent paths" begin
@@ -189,6 +237,19 @@ end
     @test linear_results == (x = 0,)
 end
 
+@testset "Fork-free tuple compatibility and scaling" begin
+    explicit_composite =
+        apply_decay_instruction(CompositeInstruction((BundleOnly(),)), :initial)
+    tuple_sugar = apply_decay_instruction((BundleOnly(),), :initial)
+    @test tuple_sugar == explicit_composite == (:specialized_composite, (;))
+
+    long_program = ntuple(_ -> NoopStep(), 2_000)
+    @test apply_decay_instruction(long_program, :unchanged) == (:unchanged, (;))
+
+    apply_decay_instruction(long_program, :unchanged)
+    @test (@allocated apply_decay_instruction(long_program, :unchanged)) <= 512
+end
+
 @testset "Static fork inference, allocation, and shared-prefix execution" begin
     counter = Ref(0)
     program = (
@@ -199,9 +260,20 @@ end
         )),
     )
 
+    # Type-level tags model an inference-friendly backend. Built-in measurement
+    # tags are runtime Symbols and therefore do not promise concrete result keys.
     branch_state, branch_results = @inferred apply_decay_instruction(program[2], 1)
     @test branch_state == 1
     @test branch_results == (left = 1, right = 1)
+
+    public_fork = Fork((
+        (ToHelicityFrame((1, 2, 3, 4)),),
+        (),
+    ))
+    public_state, public_results =
+        @inferred apply_decay_instruction(public_fork, FORK_TEST_OBJECTS)
+    @test public_state === FORK_TEST_OBJECTS
+    @test isempty(public_results)
 
     final_state, results = apply_decay_instruction(program, 0)
     @test final_state == 1
