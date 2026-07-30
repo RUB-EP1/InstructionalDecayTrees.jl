@@ -1,0 +1,175 @@
+---
+title: "Forked execution"
+engine: julia
+format:
+  gfm: default
+---
+
+A linear instruction program describes one path through a decay tree. When two
+paths share the same first frame transformation, evaluating them independently
+repeats that work:
+
+```text
+root → left child
+root → right child
+```
+
+[`Fork`](@ref) expresses the tree directly. The instructions before the fork
+run once, then every branch starts from the same parent state.
+
+## A two-branch decay
+
+Start with four vectors and name the shared and branch-specific transforms:
+
+```{julia}
+#| label: fork-setup
+#| output: false
+using InstructionalDecayTrees
+using FourVectors
+
+objects = (
+    FourVector(0.40, 0.10, 0.20; M = 0.30),
+    FourVector(-0.20, 0.25, -0.10; M = 0.40),
+    FourVector(0.05, -0.30, 0.35; M = 0.20),
+    FourVector(-0.10, -0.10, -0.25; M = 0.50),
+)
+
+root = ToHelicityFrame((1, 2, 3, 4))
+left = (
+    ToHelicityFrame((1, 2)),
+    MeasureCosThetaPhi(:left, 1),
+)
+right = (
+    ToHelicityFrameParticle2((3, 4)),
+    MeasureCosThetaPhi(:right, 3),
+)
+```
+
+The familiar approach evaluates two complete root-to-child paths:
+
+```{julia}
+#| label: independent-paths
+#| output: false
+_, left_results =
+    apply_decay_instruction((root, left...), objects)
+_, right_results =
+    apply_decay_instruction((root, right...), objects)
+```
+
+The tree-shaped program spells out the common prefix only once:
+
+```{julia}
+#| label: shared-prefix-program
+program = (
+    root,
+    Fork((left, right)),
+)
+
+parent_state, results = apply_decay_instruction(program, objects)
+
+@assert results.left == left_results.left
+@assert results.right == right_results.right
+(
+    left = (
+        cosθ = round(results.left.cosθ; digits = 3),
+        ϕ = round(results.left.ϕ; digits = 3),
+    ),
+    right = (
+        cosθ = round(results.right.cosθ; digits = 3),
+        ϕ = round(results.right.ϕ; digits = 3),
+    ),
+)
+```
+
+The state returned by `Fork` is the state that entered it. This lets execution
+continue in the parent frame after the branches and avoids choosing either
+child as the final frame.
+
+## Counting the saved work
+
+The execution API is backend-agnostic, so a tiny counting backend makes the
+shared-prefix property visible. `CountStep` represents an expensive transform;
+`RecordState` exposes the state reached by a path.
+
+```{julia}
+#| label: counting-backend
+#| output: false
+struct CountStep{C} <: InstructionalDecayTrees.AbstractInstruction
+    counter::C
+end
+
+function InstructionalDecayTrees.apply_decay_instruction(step::CountStep, state)
+    step.counter[] += 1
+    return (state + 1, (;))
+end
+
+struct RecordState{Tag} <: InstructionalDecayTrees.AbstractMeasureInstruction end
+
+function InstructionalDecayTrees.apply_decay_instruction(
+    ::RecordState{Tag},
+    state,
+) where {Tag}
+    return (state, NamedTuple{(Tag,)}((state,)))
+end
+```
+
+Two independent paths execute the common transform twice:
+
+```{julia}
+#| label: count-independent-paths
+counter = Ref(0)
+step = CountStep(counter)
+
+apply_decay_instruction((step, RecordState{:left}()), 0)
+apply_decay_instruction((step, RecordState{:right}()), 0)
+
+@assert counter[] == 2
+counter[]
+```
+
+Putting the transform before a fork executes it once, while both branches
+observe the transformed state:
+
+```{julia}
+#| label: count-forked-program
+counter[] = 0
+counted_program = (
+    step,
+    Fork((
+        (RecordState{:left}(),),
+        (RecordState{:right}(),),
+    )),
+)
+
+final_state, counted_results =
+    apply_decay_instruction(counted_program, 0)
+
+@assert counter[] == 1
+@assert final_state == 1
+@assert counted_results == (left = 1, right = 1)
+(transforms = counter[], results = counted_results)
+```
+
+For a chain with $N$ vertices, independent root-to-vertex paths repeat roughly
+$0 + 1 + \cdots + (N - 1)$ frame descents. A nested forked program can visit
+each tree edge once instead.
+
+## Branch and result semantics
+
+Branches run in tuple order and may contain instructions, tuples,
+[`CompositeInstruction`](@ref)s, or nested forks. Measurements are merged into
+one flat `NamedTuple`. Tags must be unique throughout a program containing a
+fork; duplicate tags raise `ArgumentError`.
+
+Each branch starts from [`fork_branch_state`](@ref) applied to the parent state.
+The default is `deepcopy`, which protects mutable backend states from sibling
+changes. This function is public because it is a backend extension point:
+immutable or persistent-state backends may overload it to return the original
+state. Ordinary application code does not need to call it.
+
+The program tree and state flow retain concrete tuple types, so Julia can
+specialize on a statically shaped fork. Built-in measurement tags are runtime
+`Symbol`s, however, so the exact `NamedTuple` field names are not encoded in the
+measurement instruction type. That inference boundary also applies to linear
+programs; it is not introduced by `Fork`. Backends that encode tags as type
+parameters, like `RecordState` above, can infer the complete result shape.

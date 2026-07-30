@@ -18,8 +18,9 @@ which is registered in the General registry and is installed automatically.
 
 - **Declarative:** describe boosts, rotations, and angle measurements as an
   instruction path instead of hand-written matrix algebra.
-- **Type-stable:** instruction sequences are tuples of concrete types; results
-  are `NamedTuple`s that the Julia compiler can specialize on.
+- **Type-stable state flow:** instruction sequences and tree branches are tuples
+  of concrete types, allowing Julia to specialize on the program structure.
+  Measurements are collected in `NamedTuple`s keyed by the supplied tags.
 - **Modular backend:** the core DSL is backend-agnostic; the current physics
   backend is `FourVectors.jl`.
 - **Unified execution:** [`apply_decay_instruction`](@ref) is the single public
@@ -59,6 +60,8 @@ final_objs, results = apply_decay_instruction(composite, objs)
 
 For path comparisons, use [`compare_instruction_paths`](@ref) and extract
 relative Wigner angles with [`wigner_zyz`](@ref).
+Programs with shared prefixes are covered in the
+[forked execution tutorial](@ref forked-execution).
 
 ## Index specification
 
