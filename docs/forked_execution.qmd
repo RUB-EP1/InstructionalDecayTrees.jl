@@ -1,8 +1,9 @@
-```@meta
-CurrentModule = InstructionalDecayTrees
-```
-
-# [Forked execution](@id forked-execution)
+---
+title: "Forked execution"
+engine: julia
+format:
+  gfm: default
+---
 
 A linear instruction program describes one path through a decay tree. When two
 paths share the same first frame transformation, evaluating them independently
@@ -20,7 +21,8 @@ run once, then every branch starts from the same parent state.
 
 Start with four vectors and name the shared and branch-specific transforms:
 
-```@example forked
+```{julia}
+#| label: fork-setup
 using InstructionalDecayTrees
 using FourVectors
 
@@ -45,7 +47,8 @@ nothing
 
 The familiar approach evaluates two complete root-to-child paths:
 
-```@example forked
+```{julia}
+#| label: independent-paths
 _, left_results =
     apply_decay_instruction((root, left...), objects)
 _, right_results =
@@ -56,7 +59,8 @@ _, right_results =
 
 The tree-shaped program spells out the common prefix only once:
 
-```@example forked
+```{julia}
+#| label: shared-prefix-program
 program = (
     root,
     Fork((left, right)),
@@ -79,7 +83,8 @@ The execution API is backend-agnostic, so a tiny counting backend makes the
 shared-prefix property visible. `CountStep` represents an expensive transform;
 `RecordState` exposes the state reached by a path.
 
-```@example forked
+```{julia}
+#| label: counting-backend
 struct CountStep{C} <: InstructionalDecayTrees.AbstractInstruction
     counter::C
 end
@@ -102,7 +107,8 @@ nothing
 
 Two independent paths execute the common transform twice:
 
-```@example forked
+```{julia}
+#| label: count-independent-paths
 counter = Ref(0)
 step = CountStep(counter)
 
@@ -116,7 +122,8 @@ counter[]
 Putting the transform before a fork executes it once, while both branches
 observe the transformed state:
 
-```@example forked
+```{julia}
+#| label: count-forked-program
 counter[] = 0
 counted_program = (
     step,
@@ -135,8 +142,8 @@ final_state, counted_results =
 (transforms = counter[], results = counted_results)
 ```
 
-For a chain with ``N`` vertices, independent root-to-vertex paths repeat roughly
-``0 + 1 + \cdots + (N - 1)`` frame descents. A nested forked program can visit
+For a chain with $N$ vertices, independent root-to-vertex paths repeat roughly
+$0 + 1 + \cdots + (N - 1)$ frame descents. A nested forked program can visit
 each tree edge once instead.
 
 ## Branch and result semantics

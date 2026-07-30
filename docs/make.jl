@@ -4,6 +4,13 @@ using Documenter
 const DOCS = @__DIR__
 const QUARTO_PAGES = [
     (
+        qmd = joinpath(DOCS, "forked_execution.qmd"),
+        gfm = joinpath(DOCS, "forked_execution.md"),
+        md = joinpath(DOCS, "src", "forked_execution.md"),
+        id = "forked-execution",
+        edit = "../forked_execution.qmd",
+    ),
+    (
         qmd = joinpath(DOCS, "wigner_su2_so3.qmd"),
         gfm = joinpath(DOCS, "wigner_su2_so3.md"),
         md = joinpath(DOCS, "src", "wigner_tutorial.md"),
