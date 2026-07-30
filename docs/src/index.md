@@ -18,10 +18,9 @@ which is registered in the General registry and is installed automatically.
 
 - **Declarative:** describe boosts, rotations, and angle measurements as an
   instruction path instead of hand-written matrix algebra.
-- **Specialization-friendly:** instruction sequences and fork branches are
-  tuples of concrete types. Result inference follows the instruction methods;
-  built-in measurement tags are runtime `Symbol`s, so their `NamedTuple` keys
-  may remain dynamic to the compiler.
+- **Type-stable state flow:** instruction sequences and tree branches are tuples
+  of concrete types, allowing Julia to specialize on the program structure.
+  Measurements are collected in `NamedTuple`s keyed by the supplied tags.
 - **Modular backend:** the core DSL is backend-agnostic; the current physics
   backend is `FourVectors.jl`.
 - **Unified execution:** [`apply_decay_instruction`](@ref) is the single public
@@ -59,43 +58,10 @@ composite = CompositeInstruction((
 final_objs, results = apply_decay_instruction(composite, objs)
 ```
 
-### Forked programs
-
-A decay tree can share a frame prefix and then evaluate several child frames
-with [`Fork`](@ref):
-
-```julia
-program = (
-    ToHelicityFrame((1, 2, 3, 4)),
-    MeasureCosThetaPhi(:root, (1, 2)),
-    Fork((
-        (
-            ToHelicityFrame((1, 2)),
-            MeasureCosThetaPhi(:left, 1),
-        ),
-        (
-            ToHelicityFrameParticle2((3, 4)),
-            MeasureCosThetaPhi(:right, 3),
-        ),
-    )),
-)
-```
-
-Every branch starts from [`fork_branch_state`](@ref) applied to the state
-entering the fork, including its accumulated Lorentz and SU(2) tracker when
-using [`TrackedState`](@ref). The default snapshot uses `deepcopy`, so sibling
-transforms are isolated and execution continues after the fork in the unchanged
-parent frame. Backends with immutable or persistent states can overload
-`fork_branch_state` to return the original state and avoid copying. Forks can
-be nested to represent deeper trees.
-
-Measurement tags must be unique throughout a forked program. A duplicate in
-one branch, between sibling branches, or between a branch and its surrounding
-program raises an `ArgumentError` instead of overwriting a result. Purely linear
-programs retain their existing merge behavior.
-
 For path comparisons, use [`compare_instruction_paths`](@ref) and extract
 relative Wigner angles with [`wigner_zyz`](@ref).
+Programs with shared prefixes are covered in the
+[forked execution tutorial](@ref forked-execution).
 
 ## Index specification
 

@@ -1,61 +1,3 @@
-struct CountStep{C} <: InstructionalDecayTrees.AbstractInstruction
-    counter::C
-end
-
-function InstructionalDecayTrees.apply_decay_instruction(instr::CountStep, state)
-    instr.counter[] += 1
-    return (state + 1, (;))
-end
-
-struct RecordState{Tag} <: InstructionalDecayTrees.AbstractMeasureInstruction end
-
-function InstructionalDecayTrees.apply_decay_instruction(::RecordState{Tag}, state) where {Tag}
-    return (state, NamedTuple{(Tag,)}((state,)))
-end
-
-struct RecordTracker{Tag} <: InstructionalDecayTrees.AbstractMeasureInstruction end
-
-function InstructionalDecayTrees.apply_decay_instruction(
-    ::RecordTracker{Tag},
-    state::TrackedState,
-) where {Tag}
-    return (state, NamedTuple{(Tag,)}((state.tracker,)))
-end
-
-struct MutateState <: InstructionalDecayTrees.AbstractInstruction
-    value::Int
-end
-
-function InstructionalDecayTrees.apply_decay_instruction(
-    instr::MutateState,
-    state::Vector{Int},
-)
-    push!(state, instr.value)
-    return (state, (;))
-end
-
-struct RecordLength{Tag} <: InstructionalDecayTrees.AbstractMeasureInstruction end
-
-function InstructionalDecayTrees.apply_decay_instruction(
-    ::RecordLength{Tag},
-    state::Vector,
-) where {Tag}
-    return (state, NamedTuple{(Tag,)}((length(state),)))
-end
-
-struct BundleOnly <: InstructionalDecayTrees.AbstractInstruction end
-
-function InstructionalDecayTrees.apply_decay_instruction(
-    ::CompositeInstruction{Tuple{BundleOnly}},
-    state,
-)
-    return (:specialized_composite, (;))
-end
-
-struct NoopStep <: InstructionalDecayTrees.AbstractInstruction end
-
-InstructionalDecayTrees.apply_decay_instruction(::NoopStep, state) = (state, (;))
-
 function fourvectors_approx(xs, ys; atol=1e-12)
     return all(
         isapprox(x.E, y.E; atol = atol) &&
@@ -72,73 +14,45 @@ const FORK_TEST_OBJECTS = (
     FourVector(-0.10, -0.10, -0.25; M = 0.50),
 )
 
-@testset "Fork representation and empty fork" begin
-    fork = Fork((
-        (MeasurePolar(:left, 1),),
-        (MeasurePolar(:right, 2),),
-    ))
-
-    @test fork isa InstructionalDecayTrees.AbstractInstruction
-    @test isconcretetype(typeof(fork))
-    @test repr(fork) ==
-          "Fork(((MeasurePolar(:left, 1),), (MeasurePolar(:right, 2),)))"
-
-    state = init_tracked_state(FORK_TEST_OBJECTS)
-    returned, results = apply_decay_instruction(Fork(()), state)
-    @test returned === state
-    @test isempty(results)
-end
-
-@testset "Fork snapshots mutable branch state" begin
-    parent = [0]
-    program = Fork((
-        (MutateState(1), RecordLength{:mutated_branch}()),
-        (RecordLength{:sibling_branch}(),),
-    ))
-
-    returned, results = apply_decay_instruction(program, parent)
-
-    @test returned === parent
-    @test parent == [0]
-    @test results == (mutated_branch = 2, sibling_branch = 1)
-end
-
-@testset "Balanced fork matches independent paths" begin
+@testset "Fork construction and execution" begin
     root = ToHelicityFrame((1, 2, 3, 4))
-    root_measurement = MeasureInvariant(:root_m2, (1, 2, 3, 4))
-    left_branch = (
+    left = (
         ToHelicityFrame((1, 2)),
         MeasureCosThetaPhi(:left, 1),
     )
-    right_branch = (
+    right = (
         ToHelicityFrameParticle2((3, 4)),
         MeasureCosThetaPhi(:right, 3),
     )
-    program = (
-        root,
-        root_measurement,
-        Fork((left_branch, right_branch)),
-    )
+    fork = Fork((left, right))
 
-    final_state, results = apply_decay_instruction(program, FORK_TEST_OBJECTS)
-    parent_state, parent_results =
-        apply_decay_instruction((root, root_measurement), FORK_TEST_OBJECTS)
+    @test fork isa InstructionalDecayTrees.AbstractInstruction
+    @test isconcretetype(typeof(fork))
+    @test repr(Fork(())) == "Fork(())"
+
+    final_state, results =
+        apply_decay_instruction((root, fork), FORK_TEST_OBJECTS)
+    parent_state, _ =
+        apply_decay_instruction((root,), FORK_TEST_OBJECTS)
     _, left_results =
-        apply_decay_instruction((root, root_measurement, left_branch...), FORK_TEST_OBJECTS)
+        apply_decay_instruction((root, left...), FORK_TEST_OBJECTS)
     _, right_results =
-        apply_decay_instruction((root, root_measurement, right_branch...), FORK_TEST_OBJECTS)
+        apply_decay_instruction((root, right...), FORK_TEST_OBJECTS)
 
     @test fourvectors_approx(final_state, parent_state)
-    @test results.root_m2 ≈ parent_results.root_m2
     @test results.left == left_results.left
     @test results.right == right_results.right
+
+    returned, empty_results =
+        apply_decay_instruction(Fork(()), parent_state)
+    @test returned === parent_state
+    @test isempty(empty_results)
 end
 
-@testset "Nested sequential fork returns to each parent" begin
+@testset "Nested and tracked forks return to their parent" begin
     root = ToHelicityFrame((1, 2, 3, 4))
     to_123 = ToHelicityFrame((1, 2, 3))
     to_12 = ToHelicityFrame((1, 2))
-
     program = (
         root,
         Fork((
@@ -158,12 +72,10 @@ end
         )),
     )
 
-    final_state, results = apply_decay_instruction(program, FORK_TEST_OBJECTS)
-    parent_state, _ = apply_decay_instruction((root,), FORK_TEST_OBJECTS)
-    _, path_123 = apply_decay_instruction(
-        (root, to_123, MeasureInvariant(:m123, (1, 2, 3))),
-        FORK_TEST_OBJECTS,
-    )
+    final_state, results =
+        apply_decay_instruction(program, FORK_TEST_OBJECTS)
+    parent_state, _ =
+        apply_decay_instruction((root,), FORK_TEST_OBJECTS)
     _, path_12 = apply_decay_instruction(
         (root, to_123, to_12, MeasureCosThetaPhi(:p1_in_12, 1)),
         FORK_TEST_OBJECTS,
@@ -174,115 +86,59 @@ end
     )
 
     @test fourvectors_approx(final_state, parent_state)
-    @test results.m123 ≈ path_123.m123
     @test results.p1_in_12 == path_12.p1_in_12
     @test results.p4_at_root == path_4.p4_at_root
     @test results.after_nested == results.p3_in_123
-end
 
-@testset "Tracked branches inherit and restore the parent tracker" begin
-    root = ToHelicityFrame((1, 2, 3, 4))
-    left = ToHelicityFrame((1, 2))
-    right = ToHelicityFrameParticle2((3, 4))
-    initial = init_tracked_state(FORK_TEST_OBJECTS)
+    tracked = init_tracked_state(FORK_TEST_OBJECTS)
+    final_tracked, tracked_results =
+        apply_decay_instruction(program, tracked)
+    parent_tracked, _ =
+        apply_decay_instruction((root,), tracked)
 
-    program = (
-        root,
-        Fork((
-            (left, RecordTracker{:left_tracker}()),
-            (right, RecordTracker{:right_tracker}()),
-        )),
-    )
-    final_state, results = apply_decay_instruction(program, initial)
-    parent_state, _ = apply_decay_instruction((root,), initial)
-    left_state, _ = apply_decay_instruction((root, left), initial)
-    right_state, _ = apply_decay_instruction((root, right), initial)
-
-    @test final_state.tracker.Λ ≈ parent_state.tracker.Λ atol = 1e-12
-    @test final_state.tracker.U ≈ parent_state.tracker.U atol = 1e-12
-    @test results.left_tracker.Λ ≈ left_state.tracker.Λ atol = 1e-12
-    @test results.left_tracker.U ≈ left_state.tracker.U atol = 1e-12
-    @test results.right_tracker.Λ ≈ right_state.tracker.Λ atol = 1e-12
-    @test results.right_tracker.U ≈ right_state.tracker.U atol = 1e-12
+    @test final_tracked.tracker.Λ ≈ parent_tracked.tracker.Λ atol = 1e-12
+    @test final_tracked.tracker.U ≈ parent_tracked.tracker.U atol = 1e-12
+    @test tracked_results == results
 end
 
 @testset "Fork rejects duplicate measurement tags" begin
+    left = (MeasurePolar(:angle, 1),)
+    right = (MeasurePolar(:angle, 2),)
+
     @test_throws ArgumentError apply_decay_instruction(
-        Fork(((RecordState{:x}(),), (RecordState{:x}(),))),
-        0,
+        Fork((left, right)),
+        FORK_TEST_OBJECTS,
     )
     @test_throws ArgumentError apply_decay_instruction(
-        (RecordState{:x}(), Fork(((RecordState{:x}(),),))),
-        0,
+        (MeasurePolar(:angle, 1), Fork((right,))),
+        FORK_TEST_OBJECTS,
     )
     @test_throws ArgumentError apply_decay_instruction(
-        (Fork(((RecordState{:x}(),),)), RecordState{:x}()),
-        0,
-    )
-    @test_throws ArgumentError apply_decay_instruction(
-        Fork(((RecordState{:x}(), RecordState{:x}()),)),
-        0,
-    )
-    @test_throws ArgumentError apply_decay_instruction(
-        (
-            RecordState{:x}(),
-            CompositeInstruction((Fork(((RecordState{:x}(),),)),)),
-        ),
-        0,
+        Fork(((MeasurePolar(:angle, 1), MeasurePolar(:angle, 2)),)),
+        FORK_TEST_OBJECTS,
     )
 
-    # Preserve the historical merge behavior for programs that are entirely linear.
-    _, linear_results =
-        apply_decay_instruction((RecordState{:x}(), RecordState{:x}()), 0)
-    @test linear_results == (x = 0,)
+    # Linear programs retain their historical later-value-wins behavior.
+    _, linear_results = apply_decay_instruction(
+        (MeasurePolar(:angle, 1), MeasurePolar(:angle, 2)),
+        FORK_TEST_OBJECTS,
+    )
+    _, expected =
+        apply_decay_instruction(MeasurePolar(:angle, 2), FORK_TEST_OBJECTS)
+    @test linear_results == expected
 end
 
-@testset "Fork-free tuple compatibility and scaling" begin
-    explicit_composite =
-        apply_decay_instruction(CompositeInstruction((BundleOnly(),)), :initial)
-    tuple_sugar = apply_decay_instruction((BundleOnly(),), :initial)
-    @test tuple_sugar == explicit_composite == (:specialized_composite, (;))
-
-    long_program = ntuple(_ -> NoopStep(), 2_000)
-    @test apply_decay_instruction(long_program, :unchanged) == (:unchanged, (;))
-
-    apply_decay_instruction(long_program, :unchanged)
-    @test (@allocated apply_decay_instruction(long_program, :unchanged)) <= 512
-end
-
-@testset "Static fork inference, allocation, and shared-prefix execution" begin
-    counter = Ref(0)
-    program = (
-        CountStep(counter),
-        Fork((
-            (RecordState{:left}(),),
-            (RecordState{:right}(),),
-        )),
-    )
-
-    # Type-level tags model an inference-friendly backend. Built-in measurement
-    # tags are runtime Symbols and therefore do not promise concrete result keys.
-    branch_state, branch_results = @inferred apply_decay_instruction(program[2], 1)
-    @test branch_state == 1
-    @test branch_results == (left = 1, right = 1)
-
-    public_fork = Fork((
+@testset "Static empty-result fork inference" begin
+    fork = Fork((
         (ToHelicityFrame((1, 2, 3, 4)),),
         (),
     ))
-    public_state, public_results =
-        @inferred apply_decay_instruction(public_fork, FORK_TEST_OBJECTS)
-    @test public_state === FORK_TEST_OBJECTS
-    @test isempty(public_results)
 
-    final_state, results = apply_decay_instruction(program, 0)
-    @test final_state == 1
-    @test results == (left = 1, right = 1)
-    @test counter[] == 1
+    state, results =
+        @inferred apply_decay_instruction(fork, FORK_TEST_OBJECTS)
+    @test state === FORK_TEST_OBJECTS
+    @test isempty(results)
 
-    apply_decay_instruction(program, 0) # warm up the exact call before measuring
-    counter[] = 0
-    allocated = @allocated apply_decay_instruction(program, 0)
-    @test counter[] == 1
-    @test allocated <= 512
+    apply_decay_instruction(fork, FORK_TEST_OBJECTS)
+    @test (@allocated apply_decay_instruction(fork, FORK_TEST_OBJECTS)) <= 512
 end

@@ -63,6 +63,7 @@ makedocs(;
     ),
     pages = [
         "Home" => "index.md",
+        "Forked execution" => "forked_execution.md",
         "API reference" => "api.md",
         "Wigner angles: SO(3) vs SU(2)" => "wigner_tutorial.md",
         "Small-mass Wigner limit" => "massless_wigner_limit.md",
