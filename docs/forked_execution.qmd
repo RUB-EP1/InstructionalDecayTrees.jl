@@ -23,6 +23,7 @@ Start with four vectors and name the shared and branch-specific transforms:
 
 ```{julia}
 #| label: fork-setup
+#| output: false
 using InstructionalDecayTrees
 using FourVectors
 
@@ -42,19 +43,17 @@ right = (
     ToHelicityFrameParticle2((3, 4)),
     MeasureCosThetaPhi(:right, 3),
 )
-nothing
 ```
 
 The familiar approach evaluates two complete root-to-child paths:
 
 ```{julia}
 #| label: independent-paths
+#| output: false
 _, left_results =
     apply_decay_instruction((root, left...), objects)
 _, right_results =
     apply_decay_instruction((root, right...), objects)
-
-(left = left_results.left, right = right_results.right)
 ```
 
 The tree-shaped program spells out the common prefix only once:
@@ -70,7 +69,16 @@ parent_state, results = apply_decay_instruction(program, objects)
 
 @assert results.left == left_results.left
 @assert results.right == right_results.right
-results
+(
+    left = (
+        cosθ = round(results.left.cosθ; digits = 3),
+        ϕ = round(results.left.ϕ; digits = 3),
+    ),
+    right = (
+        cosθ = round(results.right.cosθ; digits = 3),
+        ϕ = round(results.right.ϕ; digits = 3),
+    ),
+)
 ```
 
 The state returned by `Fork` is the state that entered it. This lets execution
@@ -85,6 +93,7 @@ shared-prefix property visible. `CountStep` represents an expensive transform;
 
 ```{julia}
 #| label: counting-backend
+#| output: false
 struct CountStep{C} <: InstructionalDecayTrees.AbstractInstruction
     counter::C
 end
@@ -102,7 +111,6 @@ function InstructionalDecayTrees.apply_decay_instruction(
 ) where {Tag}
     return (state, NamedTuple{(Tag,)}((state,)))
 end
-nothing
 ```
 
 Two independent paths execute the common transform twice:
