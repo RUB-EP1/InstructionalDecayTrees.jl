@@ -1,4 +1,5 @@
 using LinearAlgebra
+using Random
 
 @testset "TrackedState dispatch" begin
     p1 = FourVector(0.3, 0.2, 0.1; M = 0.2)
@@ -43,6 +44,77 @@ end
 
     @test cmp.tracker1.Λ ≈ cmp.tracker2.Λ atol = 1e-12
     @test cmp.relative.Λ ≈ I4 atol = 1e-10
+end
+
+@testset "Subchannel particle-2 convention under resonance-first reordering" begin
+    rng = MersenneTwister(20260806)
+    masses = (0.20, 0.30, 0.25, 0.18, 0.22)
+    lab_objects = Tuple(begin
+        momentum = 0.6 .* randn(rng, 3)
+        FourVector(momentum[1], momentum[2], momentum[3]; M = mass)
+    end for mass in masses)
+    root_to_cmf = ToHelicityFrame((1, 2, 3, 4, 5))
+
+    topology_1 = (
+        root_to_cmf,
+        MeasureSpherical(:theta_12345, :phi_12345, (2, 3, 4, 5)),
+        ToHelicityFrame((2, 3, 4, 5)),
+        MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+        ToHelicityFrame((3, 4, 5)),
+        MeasureSpherical(:theta_345, :phi_345, (4, 5)),
+        ToHelicityFrame((4, 5)),
+        MeasureSpherical(:theta_45, :phi_45, 4),
+    )
+    topology_2_particle2 = (
+        root_to_cmf,
+        MeasureSpherical(:theta_12345, :phi_12345, 1),
+        ToHelicityFrameParticle2((2, 3, 4, 5)),
+        MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+        ToHelicityFrame((3, 4, 5)),
+        MeasureSpherical(:theta_345, :phi_345, 3),
+        ToHelicityFrameParticle2((4, 5)),
+        MeasureSpherical(:theta_45, :phi_45, 4),
+    )
+    topology_2_helicity = (
+        root_to_cmf,
+        MeasureSpherical(:theta_12345, :phi_12345, 1),
+        ToHelicityFrameParticle2((2, 3, 4, 5)),
+        MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+        ToHelicityFrame((3, 4, 5)),
+        MeasureSpherical(:theta_345, :phi_345, 3),
+        ToHelicityFrame((4, 5)),
+        MeasureSpherical(:theta_45, :phi_45, 4),
+    )
+
+    standard_cmp =
+        compare_instruction_paths(topology_1, topology_2_particle2, lab_objects)
+    vector_cmp =
+        compare_instruction_paths(topology_1, topology_2_helicity, lab_objects)
+
+    @test standard_cmp.relative.Λ ≈ Diagonal([-1.0, -1.0, 1.0, 1.0]) atol = 1e-12
+    @test vector_cmp.relative.Λ ≈ Matrix{Float64}(I, 4, 4) atol = 1e-12
+
+    reference = standard_cmp.results1
+    standard = standard_cmp.results2
+    vector = vector_cmp.results2
+
+    @test reference.theta_12345 + standard.theta_12345 ≈ π atol = 1e-12
+    @test mod(standard.phi_12345 - reference.phi_12345, 2π) ≈ π atol = 1e-12
+    @test standard.theta_2345 ≈ reference.theta_2345 atol = 1e-12
+    @test mod(standard.phi_2345 - reference.phi_2345, 2π) ≈ π atol = 1e-12
+    @test standard.theta_345 + reference.theta_345 ≈ π atol = 1e-12
+    @test mod(standard.phi_345 - reference.phi_345, 2π) ≈ π atol = 1e-12
+    @test standard.theta_45 ≈ reference.theta_45 atol = 1e-12
+    @test mod(standard.phi_45 - reference.phi_45, 2π) ≈ π atol = 1e-12
+
+    @test vector.theta_12345 ≈ standard.theta_12345 atol = 1e-12
+    @test vector.phi_12345 ≈ standard.phi_12345 atol = 1e-12
+    @test vector.theta_2345 ≈ standard.theta_2345 atol = 1e-12
+    @test vector.phi_2345 ≈ standard.phi_2345 atol = 1e-12
+    @test vector.theta_345 ≈ standard.theta_345 atol = 1e-12
+    @test vector.phi_345 ≈ standard.phi_345 atol = 1e-12
+    @test vector.theta_45 ≈ reference.theta_45 atol = 1e-12
+    @test vector.phi_45 ≈ reference.phi_45 atol = 1e-12
 end
 
 @testset "TrackedState Float32 support" begin

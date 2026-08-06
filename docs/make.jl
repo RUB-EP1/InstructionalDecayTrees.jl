@@ -24,6 +24,13 @@ const QUARTO_PAGES = [
         id = "massless-wigner-limit",
         edit = "../massless_wigner_limit.qmd",
     ),
+    (
+        qmd = joinpath(DOCS, "helicity_frame_conventions.qmd"),
+        gfm = joinpath(DOCS, "helicity_frame_conventions.md"),
+        md = joinpath(DOCS, "src", "helicity_frame_conventions.md"),
+        id = "helicity-frame-conventions",
+        edit = "../helicity_frame_conventions.qmd",
+    ),
 ]
 
 function render_quarto_page!(page)
@@ -73,6 +80,7 @@ makedocs(;
         "Forked execution" => "forked_execution.md",
         "API reference" => "api.md",
         "Wigner angles: SO(3) vs SU(2)" => "wigner_tutorial.md",
+        "Particle-2 frame conventions" => "helicity_frame_conventions.md",
         "Small-mass Wigner limit" => "massless_wigner_limit.md",
     ],
 )
