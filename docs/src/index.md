@@ -127,7 +127,7 @@ source `docs/wigner_su2_so3.qmd` and published as
 [Wigner angles: SO(3) vs SU(2)](@ref wigner).
 
 For a step-by-step comparison of reordered paths to the same subchannel,
-see [Particle-2 helicity frames for a subchannel resonance](@ref helicity-frame-conventions).
+see [Topology ordering and particle-2 helicity frames](@ref helicity-frame-conventions).
 
 ## Developer notes
 
