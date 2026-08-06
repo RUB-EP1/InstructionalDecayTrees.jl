@@ -1,30 +1,42 @@
-# Particle-2 helicity frames for a subchannel resonance
+# Topology ordering and particle-2 helicity frames
 
 
-Consider the two orderings
-
-``` text
-T1:   ((((4, 5), 3), 2), 1)
-T2:   (1, ((3, (4, 5)), 2))
-```
-
-Both contain the chain of rest frames
+This tutorial compares three ways to reach the `(4,5)` subchannel:
 
 ``` text
-12345 → 2345 → 345 → 45,
+T1:                       ((((4, 5), 3), 2), 1)
+T2 + particle-2 frame:    (1, ((3, (4, 5)), 2))
+T2 + momentum frame:      (1, ((3, (4, 5)), 2))
 ```
 
-but their daughter ordering differs. Here **particle 1 at a vertex**
-means the first daughter of that vertex, not necessarily the external
-particle with label `1`. A decay-angle program must measure that first
-daughter before it descends to the next resonance frame.
+The last two rows have the same topology. They differ only in the final
+instruction: `ToHelicityFrameParticle2((4,5))` or
+`ToHelicityFrame((4,5))`.
 
-## Generate one event
+All three programs follow the same rule at every vertex:
 
-Generate five on-shell four-vectors independently. A fixed seed makes
-the tutorial reproducible. Each complete program first applies the same
-transformation to the `12345` center-of-mass frame; only subsequent
-instructions differ.
+1.  arrive in the current resonance rest frame;
+2.  measure the angles of the vertex’s **first daughter**;
+3.  descend to the next resonance rest frame.
+
+Here “first daughter” means particle 1 *of the current vertex*, not
+always the external particle labelled `1`. The four measurements are
+therefore
+
+| rest frame | T1 measures | T2 measures |
+|------------|------------:|------------:|
+| `12345`    |    `(2345)` |         `1` |
+| `2345`     |     `(345)` |     `(345)` |
+| `345`      |      `(45)` |         `3` |
+| `45`       |         `4` |         `4` |
+
+## Generate one event and enter its center-of-mass frame
+
+We first generate five independent, on-shell four-vectors. The seed
+fixes one reproducible example, but none of the frame relations below
+depend on this particular point. Every program starts with the same
+transformation from the laboratory frame to the `12345` center-of-mass
+frame.
 
 ``` julia
 using InstructionalDecayTrees
@@ -40,158 +52,262 @@ lab_objects = Tuple(begin
     FourVector(momentum[1], momentum[2], momentum[3]; M = mass)
 end for mass in masses)
 
-root_to_cmf = ToHelicityFrame((1, 2, 3, 4, 5))
+to_12345_cmf = ToHelicityFrame((1, 2, 3, 4, 5))
 ```
 
-## Measure, then descend
+## Program 1: resonance-first topology T1
 
-The programs spell out the repeated operation explicitly:
-
-1.  arrive in a resonance rest frame;
-2.  measure the angles of that vertex’s first daughter;
-3.  transform to the next resonance rest frame.
-
-In T1 the successive first daughters are `(2345)`, `(345)`, `(45)`, and
-`4`. In T2 they are `1`, `(345)`, `3`, and `4`.
+At the root, T1 places the `(2345)` resonance first and external
+particle `1` second. We measure `(2345)` in the `12345` frame, then
+enter the `(2345)` frame. The same measure-then-descend pattern
+continues until the `(4,5)` frame, where particle `4` is the first
+daughter.
 
 ``` julia
-T1 = (
-    root_to_cmf,
+program_T1 = (
+    to_12345_cmf,
+
+    # 12345: measure (2345), then descend to its rest frame.
     MeasureSpherical(:theta_12345, :phi_12345, (2, 3, 4, 5)),
     ToHelicityFrame((2, 3, 4, 5)),
+
+    # 2345: measure (345), then descend to its rest frame.
     MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
     ToHelicityFrame((3, 4, 5)),
+
+    # 345: measure (45), then descend to its rest frame.
     MeasureSpherical(:theta_345, :phi_345, (4, 5)),
     ToHelicityFrame((4, 5)),
+
+    # 45: measure particle 4.
     MeasureSpherical(:theta_45, :phi_45, 4),
 )
-
-T2_particle2 = (
-    root_to_cmf,
-    MeasureSpherical(:theta_12345, :phi_12345, 1),
-    ToHelicityFrameParticle2((2, 3, 4, 5)),
-    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
-    ToHelicityFrame((3, 4, 5)),
-    MeasureSpherical(:theta_345, :phi_345, 3),
-    ToHelicityFrameParticle2((4, 5)),
-    MeasureSpherical(:theta_45, :phi_45, 4),
-)
-
-T2_helicity = (
-    root_to_cmf,
-    MeasureSpherical(:theta_12345, :phi_12345, 1),
-    ToHelicityFrameParticle2((2, 3, 4, 5)),
-    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
-    ToHelicityFrame((3, 4, 5)),
-    MeasureSpherical(:theta_345, :phi_345, 3),
-    ToHelicityFrame((4, 5)),
-    MeasureSpherical(:theta_45, :phi_45, 4),
-)
-
-_, angles_T1 = apply_decay_instruction(T1, lab_objects)
-_, angles_T2_particle2 = apply_decay_instruction(T2_particle2, lab_objects)
-_, angles_T2_helicity = apply_decay_instruction(T2_helicity, lab_objects)
 ```
 
-The two T2 programs differ only in how they approach the `(4,5)` frame.
-The standard second-daughter convention uses
-[`ToHelicityFrameParticle2`](@ref), while the alternate program uses the
-`(4,5)` vector directly in [`ToHelicityFrame`](@ref).
+## Program 2: T2 with `ToHelicityFrameParticle2`
+
+T2 reverses the root ordering: external particle `1` is first and
+`(2345)` is second. After measuring particle `1`, the standard
+particle-2 instruction enters the `(2345)` frame with the axis
+convention appropriate to a second daughter. The `(4,5)` resonance is
+also second at its vertex, so the same instruction is used for the final
+descent.
+
+``` julia
+program_T2_particle2 = (
+    to_12345_cmf,
+
+    # 12345: measure particle 1, then enter the second daughter's rest frame.
+    MeasureSpherical(:theta_12345, :phi_12345, 1),
+    ToHelicityFrameParticle2((2, 3, 4, 5)),
+
+    # 2345: measure (345), then descend to its rest frame.
+    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+    ToHelicityFrame((3, 4, 5)),
+
+    # 345: measure particle 3, then enter the second daughter's rest frame.
+    MeasureSpherical(:theta_345, :phi_345, 3),
+    ToHelicityFrameParticle2((4, 5)),
+
+    # 45: measure particle 4.
+    MeasureSpherical(:theta_45, :phi_45, 4),
+)
+```
+
+## Program 3: T2 with `ToHelicityFrame((4,5))`
+
+The third program is identical to Program 2 through the measurement in
+the `345` frame. Only the final descent changes: it uses the `(4,5)`
+momentum directly, without the extra particle-2 convention.
+
+``` julia
+program_T2_helicity = (
+    to_12345_cmf,
+
+    # 12345: measure particle 1, then enter the second daughter's rest frame.
+    MeasureSpherical(:theta_12345, :phi_12345, 1),
+    ToHelicityFrameParticle2((2, 3, 4, 5)),
+
+    # 2345: measure (345), then descend to its rest frame.
+    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+    ToHelicityFrame((3, 4, 5)),
+
+    # 345: measure particle 3, then use the (45) momentum for the final frame.
+    MeasureSpherical(:theta_345, :phi_345, 3),
+    ToHelicityFrame((4, 5)),
+
+    # 45: measure particle 4.
+    MeasureSpherical(:theta_45, :phi_45, 4),
+)
+```
+
+Now execute the three complete programs on the same event:
+
+``` julia
+_, angles_T1 = apply_decay_instruction(program_T1, lab_objects)
+_, angles_T2_particle2 = apply_decay_instruction(program_T2_particle2, lab_objects)
+_, angles_T2_helicity = apply_decay_instruction(program_T2_helicity, lab_objects)
+```
 
 ## Angles at every vertex
 
-Each table entry names the first daughter being measured and gives
-`(θ, ϕ)` in radians.
+The code below constructs the displayed table from the measured values.
+No numbers are copied into the prose or stored as a fixture. Angles are
+in radians and azimuths are shown in `[-π, π)`.
 
 ``` julia
-angle_text(x) = string(round(abs(x) < 5e-13 ? 0.0 : x; digits = 3))
-angle_pair(angles, frame) = string(
-    "θ = ",
-    angle_text(getproperty(angles, Symbol(:theta_, frame))),
-    "; ϕ = ",
-    angle_text(getproperty(angles, Symbol(:phi_, frame))),
+clean(x) = abs(x) < 5e-13 ? 0.0 : x
+function number(x)
+    value = round(clean(x); digits = 3)
+    return isinteger(value) ? string(Int(value)) : string(value)
+end
+angle_pair(theta, phi) = "θ = $(number(theta)); ϕ = $(number(phi))"
+
+angle_rows = (
+    (
+        frame = "12345",
+        T1 = (daughter = "(2345)", theta = angles_T1.theta_12345, phi = angles_T1.phi_12345),
+        T2p2 = (daughter = "1", theta = angles_T2_particle2.theta_12345, phi = angles_T2_particle2.phi_12345),
+        T2h = (daughter = "1", theta = angles_T2_helicity.theta_12345, phi = angles_T2_helicity.phi_12345),
+    ),
+    (
+        frame = "2345",
+        T1 = (daughter = "(345)", theta = angles_T1.theta_2345, phi = angles_T1.phi_2345),
+        T2p2 = (daughter = "(345)", theta = angles_T2_particle2.theta_2345, phi = angles_T2_particle2.phi_2345),
+        T2h = (daughter = "(345)", theta = angles_T2_helicity.theta_2345, phi = angles_T2_helicity.phi_2345),
+    ),
+    (
+        frame = "345",
+        T1 = (daughter = "(45)", theta = angles_T1.theta_345, phi = angles_T1.phi_345),
+        T2p2 = (daughter = "3", theta = angles_T2_particle2.theta_345, phi = angles_T2_particle2.phi_345),
+        T2h = (daughter = "3", theta = angles_T2_helicity.theta_345, phi = angles_T2_helicity.phi_345),
+    ),
+    (
+        frame = "45",
+        T1 = (daughter = "4", theta = angles_T1.theta_45, phi = angles_T1.phi_45),
+        T2p2 = (daughter = "4", theta = angles_T2_particle2.theta_45, phi = angles_T2_particle2.phi_45),
+        T2h = (daughter = "4", theta = angles_T2_helicity.theta_45, phi = angles_T2_helicity.phi_45),
+    ),
 )
 
-rows = (
-    (frame = :12345, first = ("2345", "1", "1")),
-    (frame = :2345, first = ("345", "345", "345")),
-    (frame = :345, first = ("45", "3", "3")),
-    (frame = :45, first = ("4", "4", "4")),
-)
-
-println("| rest frame | T1 | T2 + ToHelicityFrameParticle2 | T2 + ToHelicityFrame |")
+println("| rest frame | T1 | T2 + `ToHelicityFrameParticle2` | T2 + `ToHelicityFrame` |")
 println("|---|---:|---:|---:|")
-for row in rows
-    values = (
-        angle_pair(angles_T1, row.frame),
-        angle_pair(angles_T2_particle2, row.frame),
-        angle_pair(angles_T2_helicity, row.frame),
-    )
+for row in angle_rows
     println(
-        "| ",
-        row.frame,
-        " | `",
-        row.first[1],
-        "`: ",
-        values[1],
-        " | `",
-        row.first[2],
-        "`: ",
-        values[2],
-        " | `",
-        row.first[3],
-        "`: ",
-        values[3],
+        "| `", row.frame,
+        "` | `", row.T1.daughter, "`: ", angle_pair(row.T1.theta, row.T1.phi),
+        " | `", row.T2p2.daughter, "`: ", angle_pair(row.T2p2.theta, row.T2p2.phi),
+        " | `", row.T2h.daughter, "`: ", angle_pair(row.T2h.theta, row.T2h.phi),
         " |",
     )
 end
 ```
 
-| rest frame | T1 | T2 + ToHelicityFrameParticle2 | T2 + ToHelicityFrame |
+| rest frame | T1 | T2 + `ToHelicityFrameParticle2` | T2 + `ToHelicityFrame` |
 |----|---:|---:|---:|
-| 12345 | `2345`: θ = 1.163; ϕ = -0.776 | `1`: θ = 1.979; ϕ = 2.366 | `1`: θ = 1.979; ϕ = 2.366 |
-| 2345 | `345`: θ = 2.015; ϕ = 2.953 | `345`: θ = 2.015; ϕ = -0.188 | `345`: θ = 2.015; ϕ = -0.188 |
-| 345 | `45`: θ = 1.654; ϕ = 3.015 | `3`: θ = 1.487; ϕ = -0.127 | `3`: θ = 1.487; ϕ = -0.127 |
-| 45 | `4`: θ = 1.524; ϕ = -1.199 | `4`: θ = 1.524; ϕ = 1.943 | `4`: θ = 1.524; ϕ = -1.199 |
+| `12345` | `(2345)`: θ = 1.163; ϕ = -0.776 | `1`: θ = 1.979; ϕ = 2.366 | `1`: θ = 1.979; ϕ = 2.366 |
+| `2345` | `(345)`: θ = 2.015; ϕ = 2.953 | `(345)`: θ = 2.015; ϕ = -0.188 | `(345)`: θ = 2.015; ϕ = -0.188 |
+| `345` | `(45)`: θ = 1.654; ϕ = 3.015 | `3`: θ = 1.487; ϕ = -0.127 | `3`: θ = 1.487; ϕ = -0.127 |
+| `45` | `4`: θ = 1.524; ϕ = -1.199 | `4`: θ = 1.524; ϕ = 1.943 | `4`: θ = 1.524; ϕ = -1.199 |
 
-The table exposes three distinct effects:
-
-1.  In the `12345` frame the two topologies measure opposite daughters:
-    T1 measures `(2345)`, while T2 measures `1`. Their directions are
-    antipodal.
-2.  In the `2345` frame all programs measure `(345)`, but the two
-    topology conventions use frames whose azimuths differ by `π`. In the
-    `345` frame, T1 measures `(45)` while T2 measures its opposite
-    daughter `3`.
-3.  In the final `45` frame all programs measure `4`. The standard
-    particle-2 approach shifts its azimuth by `π`; T2 with
-    `ToHelicityFrame((4,5))` agrees with T1.
-
-## Final-frame comparison
-
-Measurements do not alter the tracked frame transformations, so the
-complete programs can also be compared directly:
+The first table shows the raw measurements. To make their relationships
+visible, the next table is also generated from those values. `same θ`
+means the polar angles agree; `opposite` means `θ₂ + θ₁ = π`. The
+azimuthal difference is wrapped to `[-π, π)`.
 
 ``` julia
-particle2_cmp = compare_instruction_paths(T1, T2_particle2, lab_objects)
-helicity_cmp = compare_instruction_paths(T1, T2_helicity, lab_objects)
+wrap_phi(x) = mod(x + π, 2π) - π
+
+same_direction(reference, other) =
+    "same θ: Δθ = $(number(other.theta - reference.theta)); " *
+    "Δϕ = $(number(wrap_phi(other.phi - reference.phi)))"
+
+opposite_direction(reference, other) =
+    "opposite: θ₁ + θ₂ = $(number(reference.theta + other.theta)); " *
+    "Δϕ = $(number(wrap_phi(other.phi - reference.phi)))"
+
+relation_rows = (
+    (frame = "12345", p2 = opposite_direction(angle_rows[1].T1, angle_rows[1].T2p2), h = opposite_direction(angle_rows[1].T1, angle_rows[1].T2h)),
+    (frame = "2345", p2 = same_direction(angle_rows[2].T1, angle_rows[2].T2p2), h = same_direction(angle_rows[2].T1, angle_rows[2].T2h)),
+    (frame = "345", p2 = opposite_direction(angle_rows[3].T1, angle_rows[3].T2p2), h = opposite_direction(angle_rows[3].T1, angle_rows[3].T2h)),
+    (frame = "45", p2 = same_direction(angle_rows[4].T1, angle_rows[4].T2p2), h = same_direction(angle_rows[4].T1, angle_rows[4].T2h)),
+)
+
+println("| rest frame | T2 + `ToHelicityFrameParticle2` vs T1 | T2 + `ToHelicityFrame` vs T1 |")
+println("|---|---:|---:|")
+for row in relation_rows
+    println("| `", row.frame, "` | ", row.p2, " | ", row.h, " |")
+end
+```
+
+| rest frame | T2 + `ToHelicityFrameParticle2` vs T1 | T2 + `ToHelicityFrame` vs T1 |
+|----|---:|---:|
+| `12345` | opposite: θ₁ + θ₂ = 3.142; Δϕ = -3.142 | opposite: θ₁ + θ₂ = 3.142; Δϕ = -3.142 |
+| `2345` | same θ: Δθ = 0; Δϕ = -3.142 | same θ: Δθ = 0; Δϕ = -3.142 |
+| `345` | opposite: θ₁ + θ₂ = 3.142; Δϕ = 3.142 | opposite: θ₁ + θ₂ = 3.142; Δϕ = 3.142 |
+| `45` | same θ: Δθ = 0; Δϕ = -3.142 | same θ: Δθ = 0; Δϕ = 0 |
+
+Reading the two tables row by row:
+
+1.  **`12345`:** the topologies choose opposite daughters. Both T2
+    programs therefore have `θ_T2 = π - θ_T1` and an azimuth shifted by
+    `π`.
+2.  **`2345`:** all programs measure `(345)`. Both T2 paths have the
+    same polar angle as T1, but their frame azimuth differs by `π`.
+3.  **`345`:** T1 measures `(45)` whereas T2 measures the opposite
+    daughter `3`. The polar angles are complementary and the azimuths
+    differ by `π`.
+4.  **`45`:** all programs finally measure particle `4`. The standard
+    `ToHelicityFrameParticle2((4,5))` path still differs from T1 by a
+    `π` azimuthal rotation. Using `ToHelicityFrame((4,5))` removes that
+    last rotation, so both `θ` and `ϕ` agree with T1.
+
+## Final frame reached by each complete program
+
+Measurements do not change the tracked Lorentz transformation. We can
+therefore compare the final frames themselves. These assertions are
+executed whenever the documentation is built, including in CI.
+
+``` julia
+particle2_comparison =
+    compare_instruction_paths(program_T1, program_T2_particle2, lab_objects)
+helicity_comparison =
+    compare_instruction_paths(program_T1, program_T2_helicity, lab_objects)
 
 identity4 = Matrix{Float64}(I, 4, 4)
 rotate_z_pi = Diagonal([-1.0, -1.0, 1.0, 1.0])
 
-@assert particle2_cmp.relative.Λ ≈ rotate_z_pi atol = 1e-12
-@assert helicity_cmp.relative.Λ ≈ identity4 atol = 1e-12
+@assert particle2_comparison.relative.Λ ≈ rotate_z_pi atol = 1e-12
+@assert helicity_comparison.relative.Λ ≈ identity4 atol = 1e-12
 
-(
-    T2_particle2 = round.(particle2_cmp.relative.Λ; digits = 6),
-    T2_helicity = round.(helicity_cmp.relative.Λ; digits = 6),
-)
+is_pi_shift(delta_phi) = isapprox(abs(wrap_phi(delta_phi)), π; atol = 1e-12)
+
+@assert angles_T2_particle2.theta_12345 + angles_T1.theta_12345 ≈ π atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_12345 - angles_T1.phi_12345)
+@assert angles_T2_particle2.theta_2345 ≈ angles_T1.theta_2345 atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_2345 - angles_T1.phi_2345)
+@assert angles_T2_particle2.theta_345 + angles_T1.theta_345 ≈ π atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_345 - angles_T1.phi_345)
+@assert angles_T2_particle2.theta_45 ≈ angles_T1.theta_45 atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_45 - angles_T1.phi_45)
+@assert angles_T2_helicity.theta_45 ≈ angles_T1.theta_45 atol = 1e-12
+@assert wrap_phi(angles_T2_helicity.phi_45 - angles_T1.phi_45) ≈ 0 atol = 1e-12
+
+diagonal_text(matrix) = "`[" * join(number.(diag(matrix)), ", ") * "]`"
+
+println("| T2 path compared with T1 | relative final frame | generated `diag(Λ)` |")
+println("|---|---:|---:|")
+println("| `ToHelicityFrameParticle2((4,5))` | `Rz(π)` | ", diagonal_text(particle2_comparison.relative.Λ), " |")
+println("| `ToHelicityFrame((4,5))` | identity | ", diagonal_text(helicity_comparison.relative.Λ), " |")
 ```
 
-    (T2_particle2 = [-1.0 -0.0 0.0 0.0; 0.0 -1.0 -0.0 -0.0; 0.0 0.0 1.0 -0.0; -0.0 0.0 -0.0 1.0], T2_helicity = [1.0 0.0 -0.0 -0.0; -0.0 1.0 -0.0 -0.0; 0.0 0.0 1.0 -0.0; -0.0 -0.0 -0.0 1.0])
+| T2 path compared with T1          | relative final frame | generated `diag(Λ)` |
+|-----------------------------------|---------------------:|--------------------:|
+| `ToHelicityFrameParticle2((4,5))` |              `Rz(π)` |    `[-1, -1, 1, 1]` |
+| `ToHelicityFrame((4,5))`          |             identity |      `[1, 1, 1, 1]` |
 
-Thus, relative to T1, T2 with `ToHelicityFrameParticle2((4,5))` leaves
-`Rz(π)`, whereas T2 with `ToHelicityFrame((4,5))` leaves the identity.
-This statement concerns the spatial Lorentz frame; its SU(2) lift can
-additionally carry the usual central sign associated with a `2π` spinor
-rotation.
+The final-frame table is the accumulated result of every preceding step,
+not just the last instruction in isolation. Relative to T1, the T2
+particle-2 path retains `Rz(π)`. The T2 momentum-frame path reaches the
+same spatial Lorentz frame as T1. Its SU(2) lift can still carry the
+usual central sign associated with a `2π` spinor rotation.
