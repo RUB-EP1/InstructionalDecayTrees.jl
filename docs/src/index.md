@@ -29,7 +29,7 @@ which is registered in the General registry and is installed automatically.
 
 ## Getting started
 
-```julia
+```@example getting-started
 using InstructionalDecayTrees
 using FourVectors
 
@@ -49,10 +49,10 @@ final_objs, results = apply_decay_instruction(program, objs)
 Tuples are the most convenient way to write a program. You can also wrap a
 reusable sequence in a [`CompositeInstruction`](@ref):
 
-```julia
+```@example getting-started
 composite = CompositeInstruction((
-    ToHelicityFrame((1, 2, 3)),
-    PlaneAlign(4, 5),
+    ToHelicityFrame((1, 2)),
+    MeasureCosThetaPhi(:angles1, 1),
 ))
 
 final_objs, results = apply_decay_instruction(composite, objs)
@@ -74,7 +74,7 @@ Instructions that take indices accept:
 Negative indices use the corresponding four-vector with a minus sign. This is
 useful for axis alignment and for comparing equivalent path conventions:
 
-```julia
+```@example getting-started
 ToHelicityFrame(-1)              # uses -objs[1]
 PlaneAlign(1, -2)                # z from objs[1], x from -objs[2]
 ToHelicityFrame((1, -2, 3))      # objs[1] + (-objs[2]) + objs[3]

@@ -34,14 +34,23 @@ This document records exactly how `test/fixtures/decayangle_crosscheck.json` was
 cd /tmp
 git clone https://github.com/KaiHabermann/decayangle.git
 cd /tmp/decayangle
-git rev-parse HEAD
+git checkout --detach 6fbeb1ec090373a13434506e2c555a40c0b849d5
+git rev-parse --verify HEAD
 ```
 
 2. Create and populate virtual environment:
 
 ```bash
-python3 -m venv /tmp/venvb
-/tmp/venvb/bin/python -m pip install numpy networkx tqdm jax jaxlib
+python3.14 -m venv /tmp/venvb
+/tmp/venvb/bin/python -m pip install \
+    jax==0.9.0.1 \
+    jaxlib==0.9.0.1 \
+    ml_dtypes==0.5.4 \
+    networkx==3.6.1 \
+    numpy==2.4.2 \
+    opt_einsum==3.4.0 \
+    scipy==1.17.1 \
+    tqdm==4.67.3
 ```
 
 3. Generate fixture from this repository:
@@ -54,6 +63,18 @@ DECAYANGLE_SRC=/tmp/decayangle/src /tmp/venvb/bin/python test/generate_decayangl
 This writes:
 
 - `test/fixtures/decayangle_crosscheck.json`
+
+Verify that the regenerated fixture is byte-for-byte identical:
+
+```bash
+shasum -a 256 test/fixtures/decayangle_crosscheck.json
+```
+
+Expected SHA-256:
+
+```text
+b5b41f02fb812e7a682071e00c3288a7eee41c12bb2460f934c05613b25522c6
+```
 
 ## Fixture Content Notes
 
