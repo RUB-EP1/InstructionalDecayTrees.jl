@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Particle-2 frame conventions · InstructionalDecayTrees.jl</title><meta name="title" content="Particle-2 frame conventions · InstructionalDecayTrees.jl"/><meta property="og:title" content="Particle-2 frame conventions · InstructionalDecayTrees.jl"/><meta property="twitter:title" content="Particle-2 frame conventions · InstructionalDecayTrees.jl"/><meta name="description" content="Documentation for InstructionalDecayTrees.jl."/><meta property="og:description" content="Documentation for InstructionalDecayTrees.jl."/><meta property="twitter:description" content="Documentation for InstructionalDecayTrees.jl."/><meta property="og:url" content="https://rub-ep1.github.io/InstructionalDecayTrees.jl/helicity_frame_conventions/"/><meta property="twitter:url" content="https://rub-ep1.github.io/InstructionalDecayTrees.jl/helicity_frame_conventions/"/><link rel="canonical" href="https://rub-ep1.github.io/InstructionalDecayTrees.jl/helicity_frame_conventions/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">InstructionalDecayTrees.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../forked_execution/">Forked execution</a></li><li><a class="tocitem" href="../api/">API reference</a></li><li><a class="tocitem" href="../wigner_tutorial/">Wigner angles: SO(3) vs SU(2)</a></li><li class="is-active"><a class="tocitem" href>Particle-2 frame conventions</a><ul class="internal"><li><a class="tocitem" href="#Generate-one-event-and-enter-its-center-of-mass-frame"><span>Generate one event and enter its center-of-mass frame</span></a></li><li><a class="tocitem" href="#Program-1:-resonance-first-topology-T1"><span>Program 1: resonance-first topology T1</span></a></li><li><a class="tocitem" href="#Program-2:-T2-with-ToHelicityFrameParticle2"><span>Program 2: T2 with <code>ToHelicityFrameParticle2</code></span></a></li><li><a class="tocitem" href="#Program-3:-T2-with-ToHelicityFrame((4,5))"><span>Program 3: T2 with <code>ToHelicityFrame((4,5))</code></span></a></li><li><a class="tocitem" href="#Angles-at-every-vertex"><span>Angles at every vertex</span></a></li><li><a class="tocitem" href="#Final-frame-reached-by-each-complete-program"><span>Final frame reached by each complete program</span></a></li></ul></li><li><a class="tocitem" href="../massless_wigner_limit/">Small-mass Wigner limit</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Particle-2 frame conventions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Particle-2 frame conventions</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/RUB-EP1/InstructionalDecayTrees.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/RUB-EP1/InstructionalDecayTrees.jl/blob/main/docs/helicity_frame_conventions.qmd#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="helicity-frame-conventions"><a class="docs-heading-anchor" href="#helicity-frame-conventions">Topology ordering and particle-2 helicity frames</a><a id="helicity-frame-conventions-1"></a><a class="docs-heading-anchor-permalink" href="#helicity-frame-conventions" title="Permalink"></a></h1><p>This tutorial compares three ways to reach the <code>(4,5)</code> subchannel:</p><pre><code class="language-text hljs">T1:                       ((((4, 5), 3), 2), 1)
+T2 + particle-2 frame:    (1, ((3, (4, 5)), 2))
+T2 + momentum frame:      (1, ((3, (4, 5)), 2))</code></pre><p>The last two rows have the same topology. They differ only in the final instruction: <code>ToHelicityFrameParticle2((4,5))</code> or <code>ToHelicityFrame((4,5))</code>.</p><p>All three programs follow the same rule at every vertex:</p><ol><li>arrive in the current resonance rest frame;</li><li>measure the angles of the vertex’s <strong>first daughter</strong>;</li><li>descend to the next resonance rest frame.</li></ol><p>Here “first daughter” means particle 1 <em>of the current vertex</em>, not always the external particle labelled <code>1</code>. The four measurements are therefore</p><table><tr><th style="text-align: right">rest frame</th><th style="text-align: right">T1 measures</th><th style="text-align: right">T2 measures</th></tr><tr><td style="text-align: right"><code>12345</code></td><td style="text-align: right"><code>(2345)</code></td><td style="text-align: right"><code>1</code></td></tr><tr><td style="text-align: right"><code>2345</code></td><td style="text-align: right"><code>(345)</code></td><td style="text-align: right"><code>(345)</code></td></tr><tr><td style="text-align: right"><code>345</code></td><td style="text-align: right"><code>(45)</code></td><td style="text-align: right"><code>3</code></td></tr><tr><td style="text-align: right"><code>45</code></td><td style="text-align: right"><code>4</code></td><td style="text-align: right"><code>4</code></td></tr></table><h2 id="Generate-one-event-and-enter-its-center-of-mass-frame"><a class="docs-heading-anchor" href="#Generate-one-event-and-enter-its-center-of-mass-frame">Generate one event and enter its center-of-mass frame</a><a id="Generate-one-event-and-enter-its-center-of-mass-frame-1"></a><a class="docs-heading-anchor-permalink" href="#Generate-one-event-and-enter-its-center-of-mass-frame" title="Permalink"></a></h2><p>We first generate five independent, on-shell four-vectors. The seed fixes one reproducible example, but none of the frame relations below depend on this particular point. Every program starts with the same transformation from the laboratory frame to the <code>12345</code> center-of-mass frame.</p><pre><code class="language-julia hljs">using InstructionalDecayTrees
+using FourVectors
+using LinearAlgebra
+using Random
+
+rng = MersenneTwister(20260806)
+masses = (0.20, 0.30, 0.25, 0.18, 0.22)
+
+lab_objects = Tuple(begin
+    momentum = 0.6 .* randn(rng, 3)
+    FourVector(momentum[1], momentum[2], momentum[3]; M = mass)
+end for mass in masses)
+
+to_12345_cmf = ToHelicityFrame((1, 2, 3, 4, 5))</code></pre><h2 id="Program-1:-resonance-first-topology-T1"><a class="docs-heading-anchor" href="#Program-1:-resonance-first-topology-T1">Program 1: resonance-first topology T1</a><a id="Program-1:-resonance-first-topology-T1-1"></a><a class="docs-heading-anchor-permalink" href="#Program-1:-resonance-first-topology-T1" title="Permalink"></a></h2><p>At the root, T1 places the <code>(2345)</code> resonance first and external particle <code>1</code> second. We measure <code>(2345)</code> in the <code>12345</code> frame, then enter the <code>(2345)</code> frame. The same measure-then-descend pattern continues until the <code>(4,5)</code> frame, where particle <code>4</code> is the first daughter.</p><pre><code class="language-julia hljs">program_T1 = (
+    to_12345_cmf,
+
+    # 12345: measure (2345), then descend to its rest frame.
+    MeasureSpherical(:theta_12345, :phi_12345, (2, 3, 4, 5)),
+    ToHelicityFrame((2, 3, 4, 5)),
+
+    # 2345: measure (345), then descend to its rest frame.
+    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+    ToHelicityFrame((3, 4, 5)),
+
+    # 345: measure (45), then descend to its rest frame.
+    MeasureSpherical(:theta_345, :phi_345, (4, 5)),
+    ToHelicityFrame((4, 5)),
+
+    # 45: measure particle 4.
+    MeasureSpherical(:theta_45, :phi_45, 4),
+)</code></pre><h2 id="Program-2:-T2-with-ToHelicityFrameParticle2"><a class="docs-heading-anchor" href="#Program-2:-T2-with-ToHelicityFrameParticle2">Program 2: T2 with <code>ToHelicityFrameParticle2</code></a><a id="Program-2:-T2-with-ToHelicityFrameParticle2-1"></a><a class="docs-heading-anchor-permalink" href="#Program-2:-T2-with-ToHelicityFrameParticle2" title="Permalink"></a></h2><p>T2 reverses the root ordering: external particle <code>1</code> is first and <code>(2345)</code> is second. After measuring particle <code>1</code>, the standard particle-2 instruction enters the <code>(2345)</code> frame with the axis convention appropriate to a second daughter. The <code>(4,5)</code> resonance is also second at its vertex, so the same instruction is used for the final descent.</p><pre><code class="language-julia hljs">program_T2_particle2 = (
+    to_12345_cmf,
+
+    # 12345: measure particle 1, then enter the second daughter&#39;s rest frame.
+    MeasureSpherical(:theta_12345, :phi_12345, 1),
+    ToHelicityFrameParticle2((2, 3, 4, 5)),
+
+    # 2345: measure (345), then descend to its rest frame.
+    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+    ToHelicityFrame((3, 4, 5)),
+
+    # 345: measure particle 3, then enter the second daughter&#39;s rest frame.
+    MeasureSpherical(:theta_345, :phi_345, 3),
+    ToHelicityFrameParticle2((4, 5)),
+
+    # 45: measure particle 4.
+    MeasureSpherical(:theta_45, :phi_45, 4),
+)</code></pre><h2 id="Program-3:-T2-with-ToHelicityFrame((4,5))"><a class="docs-heading-anchor" href="#Program-3:-T2-with-ToHelicityFrame((4,5))">Program 3: T2 with <code>ToHelicityFrame((4,5))</code></a><a id="Program-3:-T2-with-ToHelicityFrame((4,5))-1"></a><a class="docs-heading-anchor-permalink" href="#Program-3:-T2-with-ToHelicityFrame((4,5))" title="Permalink"></a></h2><p>The third program is identical to Program 2 through the measurement in the <code>345</code> frame. Only the final descent changes: it uses the <code>(4,5)</code> momentum directly, without the extra particle-2 convention.</p><pre><code class="language-julia hljs">program_T2_helicity = (
+    to_12345_cmf,
+
+    # 12345: measure particle 1, then enter the second daughter&#39;s rest frame.
+    MeasureSpherical(:theta_12345, :phi_12345, 1),
+    ToHelicityFrameParticle2((2, 3, 4, 5)),
+
+    # 2345: measure (345), then descend to its rest frame.
+    MeasureSpherical(:theta_2345, :phi_2345, (3, 4, 5)),
+    ToHelicityFrame((3, 4, 5)),
+
+    # 345: measure particle 3, then use the (45) momentum for the final frame.
+    MeasureSpherical(:theta_345, :phi_345, 3),
+    ToHelicityFrame((4, 5)),
+
+    # 45: measure particle 4.
+    MeasureSpherical(:theta_45, :phi_45, 4),
+)</code></pre><p>Now execute the three complete programs on the same event:</p><pre><code class="language-julia hljs">_, angles_T1 = apply_decay_instruction(program_T1, lab_objects)
+_, angles_T2_particle2 = apply_decay_instruction(program_T2_particle2, lab_objects)
+_, angles_T2_helicity = apply_decay_instruction(program_T2_helicity, lab_objects)</code></pre><h2 id="Angles-at-every-vertex"><a class="docs-heading-anchor" href="#Angles-at-every-vertex">Angles at every vertex</a><a id="Angles-at-every-vertex-1"></a><a class="docs-heading-anchor-permalink" href="#Angles-at-every-vertex" title="Permalink"></a></h2><p>The code below constructs the displayed table from the measured values. No numbers are copied into the prose or stored as a fixture. Angles are in radians and azimuths are shown in <code>[-π, π)</code>.</p><pre><code class="language-julia hljs">clean(x) = abs(x) &lt; 5e-13 ? 0.0 : x
+function number(x)
+    value = round(clean(x); digits = 3)
+    return isinteger(value) ? string(Int(value)) : string(value)
+end
+angle_pair(theta, phi) = &quot;θ = $(number(theta)); ϕ = $(number(phi))&quot;
+
+angle_rows = (
+    (
+        frame = &quot;12345&quot;,
+        T1 = (daughter = &quot;(2345)&quot;, theta = angles_T1.theta_12345, phi = angles_T1.phi_12345),
+        T2p2 = (daughter = &quot;1&quot;, theta = angles_T2_particle2.theta_12345, phi = angles_T2_particle2.phi_12345),
+        T2h = (daughter = &quot;1&quot;, theta = angles_T2_helicity.theta_12345, phi = angles_T2_helicity.phi_12345),
+    ),
+    (
+        frame = &quot;2345&quot;,
+        T1 = (daughter = &quot;(345)&quot;, theta = angles_T1.theta_2345, phi = angles_T1.phi_2345),
+        T2p2 = (daughter = &quot;(345)&quot;, theta = angles_T2_particle2.theta_2345, phi = angles_T2_particle2.phi_2345),
+        T2h = (daughter = &quot;(345)&quot;, theta = angles_T2_helicity.theta_2345, phi = angles_T2_helicity.phi_2345),
+    ),
+    (
+        frame = &quot;345&quot;,
+        T1 = (daughter = &quot;(45)&quot;, theta = angles_T1.theta_345, phi = angles_T1.phi_345),
+        T2p2 = (daughter = &quot;3&quot;, theta = angles_T2_particle2.theta_345, phi = angles_T2_particle2.phi_345),
+        T2h = (daughter = &quot;3&quot;, theta = angles_T2_helicity.theta_345, phi = angles_T2_helicity.phi_345),
+    ),
+    (
+        frame = &quot;45&quot;,
+        T1 = (daughter = &quot;4&quot;, theta = angles_T1.theta_45, phi = angles_T1.phi_45),
+        T2p2 = (daughter = &quot;4&quot;, theta = angles_T2_particle2.theta_45, phi = angles_T2_particle2.phi_45),
+        T2h = (daughter = &quot;4&quot;, theta = angles_T2_helicity.theta_45, phi = angles_T2_helicity.phi_45),
+    ),
+)
+
+println(&quot;| rest frame | T1 | T2 + `ToHelicityFrameParticle2` | T2 + `ToHelicityFrame` |&quot;)
+println(&quot;|---|---:|---:|---:|&quot;)
+for row in angle_rows
+    println(
+        &quot;| `&quot;, row.frame,
+        &quot;` | `&quot;, row.T1.daughter, &quot;`: &quot;, angle_pair(row.T1.theta, row.T1.phi),
+        &quot; | `&quot;, row.T2p2.daughter, &quot;`: &quot;, angle_pair(row.T2p2.theta, row.T2p2.phi),
+        &quot; | `&quot;, row.T2h.daughter, &quot;`: &quot;, angle_pair(row.T2h.theta, row.T2h.phi),
+        &quot; |&quot;,
+    )
+end</code></pre><table><tr><th style="text-align: right">rest frame</th><th style="text-align: right">T1</th><th style="text-align: right">T2 + <code>ToHelicityFrameParticle2</code></th><th style="text-align: right">T2 + <code>ToHelicityFrame</code></th></tr><tr><td style="text-align: right"><code>12345</code></td><td style="text-align: right"><code>(2345)</code>: θ = 1.163; ϕ = -0.776</td><td style="text-align: right"><code>1</code>: θ = 1.979; ϕ = 2.366</td><td style="text-align: right"><code>1</code>: θ = 1.979; ϕ = 2.366</td></tr><tr><td style="text-align: right"><code>2345</code></td><td style="text-align: right"><code>(345)</code>: θ = 2.015; ϕ = 2.953</td><td style="text-align: right"><code>(345)</code>: θ = 2.015; ϕ = -0.188</td><td style="text-align: right"><code>(345)</code>: θ = 2.015; ϕ = -0.188</td></tr><tr><td style="text-align: right"><code>345</code></td><td style="text-align: right"><code>(45)</code>: θ = 1.654; ϕ = 3.015</td><td style="text-align: right"><code>3</code>: θ = 1.487; ϕ = -0.127</td><td style="text-align: right"><code>3</code>: θ = 1.487; ϕ = -0.127</td></tr><tr><td style="text-align: right"><code>45</code></td><td style="text-align: right"><code>4</code>: θ = 1.524; ϕ = -1.199</td><td style="text-align: right"><code>4</code>: θ = 1.524; ϕ = 1.943</td><td style="text-align: right"><code>4</code>: θ = 1.524; ϕ = -1.199</td></tr></table><p>The first table shows the raw measurements. To make their relationships visible, the next table is also generated from those values. <code>same θ</code> means the polar angles agree; <code>opposite</code> means <code>θ₂ + θ₁ = π</code>. The azimuthal difference is wrapped to <code>[-π, π)</code>.</p><pre><code class="language-julia hljs">wrap_phi(x) = mod(x + π, 2π) - π
+
+same_direction(reference, other) =
+    &quot;same θ: Δθ = $(number(other.theta - reference.theta)); &quot; *
+    &quot;Δϕ = $(number(wrap_phi(other.phi - reference.phi)))&quot;
+
+opposite_direction(reference, other) =
+    &quot;opposite: θ₁ + θ₂ = $(number(reference.theta + other.theta)); &quot; *
+    &quot;Δϕ = $(number(wrap_phi(other.phi - reference.phi)))&quot;
+
+relation_rows = (
+    (frame = &quot;12345&quot;, p2 = opposite_direction(angle_rows[1].T1, angle_rows[1].T2p2), h = opposite_direction(angle_rows[1].T1, angle_rows[1].T2h)),
+    (frame = &quot;2345&quot;, p2 = same_direction(angle_rows[2].T1, angle_rows[2].T2p2), h = same_direction(angle_rows[2].T1, angle_rows[2].T2h)),
+    (frame = &quot;345&quot;, p2 = opposite_direction(angle_rows[3].T1, angle_rows[3].T2p2), h = opposite_direction(angle_rows[3].T1, angle_rows[3].T2h)),
+    (frame = &quot;45&quot;, p2 = same_direction(angle_rows[4].T1, angle_rows[4].T2p2), h = same_direction(angle_rows[4].T1, angle_rows[4].T2h)),
+)
+
+println(&quot;| rest frame | T2 + `ToHelicityFrameParticle2` vs T1 | T2 + `ToHelicityFrame` vs T1 |&quot;)
+println(&quot;|---|---:|---:|&quot;)
+for row in relation_rows
+    println(&quot;| `&quot;, row.frame, &quot;` | &quot;, row.p2, &quot; | &quot;, row.h, &quot; |&quot;)
+end</code></pre><table><tr><th style="text-align: right">rest frame</th><th style="text-align: right">T2 + <code>ToHelicityFrameParticle2</code> vs T1</th><th style="text-align: right">T2 + <code>ToHelicityFrame</code> vs T1</th></tr><tr><td style="text-align: right"><code>12345</code></td><td style="text-align: right">opposite: θ₁ + θ₂ = 3.142; Δϕ = -3.142</td><td style="text-align: right">opposite: θ₁ + θ₂ = 3.142; Δϕ = -3.142</td></tr><tr><td style="text-align: right"><code>2345</code></td><td style="text-align: right">same θ: Δθ = 0; Δϕ = -3.142</td><td style="text-align: right">same θ: Δθ = 0; Δϕ = -3.142</td></tr><tr><td style="text-align: right"><code>345</code></td><td style="text-align: right">opposite: θ₁ + θ₂ = 3.142; Δϕ = 3.142</td><td style="text-align: right">opposite: θ₁ + θ₂ = 3.142; Δϕ = 3.142</td></tr><tr><td style="text-align: right"><code>45</code></td><td style="text-align: right">same θ: Δθ = 0; Δϕ = -3.142</td><td style="text-align: right">same θ: Δθ = 0; Δϕ = 0</td></tr></table><p>Reading the two tables row by row:</p><ol><li><strong><code>12345</code>:</strong> the topologies choose opposite daughters. Both T2  programs therefore have <code>θ_T2 = π - θ_T1</code> and an azimuth shifted by  <code>π</code>.</li><li><strong><code>2345</code>:</strong> all programs measure <code>(345)</code>. Both T2 paths have the  same polar angle as T1, but their frame azimuth differs by <code>π</code>.</li><li><strong><code>345</code>:</strong> T1 measures <code>(45)</code> whereas T2 measures the opposite  daughter <code>3</code>. The polar angles are complementary and the azimuths  differ by <code>π</code>.</li><li><strong><code>45</code>:</strong> all programs finally measure particle <code>4</code>. The standard  <code>ToHelicityFrameParticle2((4,5))</code> path still differs from T1 by a  <code>π</code> azimuthal rotation. Using <code>ToHelicityFrame((4,5))</code> removes that  last rotation, so both <code>θ</code> and <code>ϕ</code> agree with T1.</li></ol><h2 id="Final-frame-reached-by-each-complete-program"><a class="docs-heading-anchor" href="#Final-frame-reached-by-each-complete-program">Final frame reached by each complete program</a><a id="Final-frame-reached-by-each-complete-program-1"></a><a class="docs-heading-anchor-permalink" href="#Final-frame-reached-by-each-complete-program" title="Permalink"></a></h2><p>Measurements do not change the tracked Lorentz transformation. We can therefore compare the final frames themselves. These assertions are executed whenever the documentation is built, including in CI.</p><pre><code class="language-julia hljs">particle2_comparison =
+    compare_instruction_paths(program_T1, program_T2_particle2, lab_objects)
+helicity_comparison =
+    compare_instruction_paths(program_T1, program_T2_helicity, lab_objects)
+
+identity4 = Matrix{Float64}(I, 4, 4)
+rotate_z_pi = Diagonal([-1.0, -1.0, 1.0, 1.0])
+
+@assert particle2_comparison.relative.Λ ≈ rotate_z_pi atol = 1e-12
+@assert helicity_comparison.relative.Λ ≈ identity4 atol = 1e-12
+
+is_pi_shift(delta_phi) = isapprox(abs(wrap_phi(delta_phi)), π; atol = 1e-12)
+
+@assert angles_T2_particle2.theta_12345 + angles_T1.theta_12345 ≈ π atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_12345 - angles_T1.phi_12345)
+@assert angles_T2_particle2.theta_2345 ≈ angles_T1.theta_2345 atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_2345 - angles_T1.phi_2345)
+@assert angles_T2_particle2.theta_345 + angles_T1.theta_345 ≈ π atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_345 - angles_T1.phi_345)
+@assert angles_T2_particle2.theta_45 ≈ angles_T1.theta_45 atol = 1e-12
+@assert is_pi_shift(angles_T2_particle2.phi_45 - angles_T1.phi_45)
+@assert angles_T2_helicity.theta_45 ≈ angles_T1.theta_45 atol = 1e-12
+@assert wrap_phi(angles_T2_helicity.phi_45 - angles_T1.phi_45) ≈ 0 atol = 1e-12
+
+diagonal_text(matrix) = &quot;`[&quot; * join(number.(diag(matrix)), &quot;, &quot;) * &quot;]`&quot;
+
+println(&quot;| T2 path compared with T1 | relative final frame | generated `diag(Λ)` |&quot;)
+println(&quot;|---|---:|---:|&quot;)
+println(&quot;| `ToHelicityFrameParticle2((4,5))` | `Rz(π)` | &quot;, diagonal_text(particle2_comparison.relative.Λ), &quot; |&quot;)
+println(&quot;| `ToHelicityFrame((4,5))` | identity | &quot;, diagonal_text(helicity_comparison.relative.Λ), &quot; |&quot;)</code></pre><table><tr><th style="text-align: right">T2 path compared with T1</th><th style="text-align: right">relative final frame</th><th style="text-align: right">generated <code>diag(Λ)</code></th></tr><tr><td style="text-align: right"><code>ToHelicityFrameParticle2((4,5))</code></td><td style="text-align: right"><code>Rz(π)</code></td><td style="text-align: right"><code>[-1, -1, 1, 1]</code></td></tr><tr><td style="text-align: right"><code>ToHelicityFrame((4,5))</code></td><td style="text-align: right">identity</td><td style="text-align: right"><code>[1, 1, 1, 1]</code></td></tr></table><p>The final-frame table is the accumulated result of every preceding step, not just the last instruction in isolation. Relative to T1, the T2 particle-2 path retains <code>Rz(π)</code>. The T2 momentum-frame path reaches the same spatial Lorentz frame as T1. Its SU(2) lift can still carry the usual central sign associated with a <code>2π</code> spinor rotation.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../wigner_tutorial/">« Wigner angles: SO(3) vs SU(2)</a><a class="docs-footer-nextpage" href="../massless_wigner_limit/">Small-mass Wigner limit »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 7 August 2026 21:31">Friday 7 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

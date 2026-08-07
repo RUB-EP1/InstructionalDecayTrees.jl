@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Forked execution · InstructionalDecayTrees.jl</title><meta name="title" content="Forked execution · InstructionalDecayTrees.jl"/><meta property="og:title" content="Forked execution · InstructionalDecayTrees.jl"/><meta property="twitter:title" content="Forked execution · InstructionalDecayTrees.jl"/><meta name="description" content="Documentation for InstructionalDecayTrees.jl."/><meta property="og:description" content="Documentation for InstructionalDecayTrees.jl."/><meta property="twitter:description" content="Documentation for InstructionalDecayTrees.jl."/><meta property="og:url" content="https://rub-ep1.github.io/InstructionalDecayTrees.jl/forked_execution/"/><meta property="twitter:url" content="https://rub-ep1.github.io/InstructionalDecayTrees.jl/forked_execution/"/><link rel="canonical" href="https://rub-ep1.github.io/InstructionalDecayTrees.jl/forked_execution/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">InstructionalDecayTrees.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Forked execution</a><ul class="internal"><li><a class="tocitem" href="#A-two-branch-decay"><span>A two-branch decay</span></a></li><li><a class="tocitem" href="#Counting-the-saved-work"><span>Counting the saved work</span></a></li><li><a class="tocitem" href="#Branch-and-result-semantics"><span>Branch and result semantics</span></a></li></ul></li><li><a class="tocitem" href="../api/">API reference</a></li><li><a class="tocitem" href="../wigner_tutorial/">Wigner angles: SO(3) vs SU(2)</a></li><li><a class="tocitem" href="../helicity_frame_conventions/">Particle-2 frame conventions</a></li><li><a class="tocitem" href="../massless_wigner_limit/">Small-mass Wigner limit</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Forked execution</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Forked execution</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/RUB-EP1/InstructionalDecayTrees.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/RUB-EP1/InstructionalDecayTrees.jl/blob/main/docs/forked_execution.qmd#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="forked-execution"><a class="docs-heading-anchor" href="#forked-execution">Forked execution</a><a id="forked-execution-1"></a><a class="docs-heading-anchor-permalink" href="#forked-execution" title="Permalink"></a></h1><p>A linear instruction program describes one path through a decay tree. When two paths share the same first frame transformation, evaluating them independently repeats that work:</p><pre><code class="language-text hljs">root → left child
+root → right child</code></pre><p><a href="../api/#InstructionalDecayTrees.Fork"><code>Fork</code></a> expresses the tree directly. The instructions before the fork run once, then every branch starts from the same parent state.</p><h2 id="A-two-branch-decay"><a class="docs-heading-anchor" href="#A-two-branch-decay">A two-branch decay</a><a id="A-two-branch-decay-1"></a><a class="docs-heading-anchor-permalink" href="#A-two-branch-decay" title="Permalink"></a></h2><p>Start with four vectors and name the shared and branch-specific transforms:</p><pre><code class="language-julia hljs">using InstructionalDecayTrees
+using FourVectors
+
+objects = (
+    FourVector(0.40, 0.10, 0.20; M = 0.30),
+    FourVector(-0.20, 0.25, -0.10; M = 0.40),
+    FourVector(0.05, -0.30, 0.35; M = 0.20),
+    FourVector(-0.10, -0.10, -0.25; M = 0.50),
+)
+
+root = ToHelicityFrame((1, 2, 3, 4))
+left = (
+    ToHelicityFrame((1, 2)),
+    MeasureCosThetaPhi(:left, 1),
+)
+right = (
+    ToHelicityFrameParticle2((3, 4)),
+    MeasureCosThetaPhi(:right, 3),
+)</code></pre><p>The familiar approach evaluates two complete root-to-child paths:</p><pre><code class="language-julia hljs">_, left_results =
+    apply_decay_instruction((root, left...), objects)
+_, right_results =
+    apply_decay_instruction((root, right...), objects)</code></pre><p>The tree-shaped program spells out the common prefix only once:</p><pre><code class="language-julia hljs">program = (
+    root,
+    Fork((left, right)),
+)
+
+parent_state, results = apply_decay_instruction(program, objects)
+
+@assert results.left == left_results.left
+@assert results.right == right_results.right
+(
+    left = (
+        cosθ = round(results.left.cosθ; digits = 3),
+        ϕ = round(results.left.ϕ; digits = 3),
+    ),
+    right = (
+        cosθ = round(results.right.cosθ; digits = 3),
+        ϕ = round(results.right.ϕ; digits = 3),
+    ),
+)</code></pre><pre><code class="nohighlight hljs">(left = (cosθ = 0.104, ϕ = -2.693), right = (cosθ = 0.307, ϕ = 0.332))</code></pre><p>The state returned by <code>Fork</code> is the state that entered it. This lets execution continue in the parent frame after the branches and avoids choosing either child as the final frame.</p><h2 id="Counting-the-saved-work"><a class="docs-heading-anchor" href="#Counting-the-saved-work">Counting the saved work</a><a id="Counting-the-saved-work-1"></a><a class="docs-heading-anchor-permalink" href="#Counting-the-saved-work" title="Permalink"></a></h2><p>The execution API is backend-agnostic, so a tiny counting backend makes the shared-prefix property visible. <code>CountStep</code> represents an expensive transform; <code>RecordState</code> exposes the state reached by a path.</p><pre><code class="language-julia hljs">struct CountStep{C} &lt;: InstructionalDecayTrees.AbstractInstruction
+    counter::C
+end
+
+function InstructionalDecayTrees.apply_decay_instruction(step::CountStep, state)
+    step.counter[] += 1
+    return (state + 1, (;))
+end
+
+struct RecordState{Tag} &lt;: InstructionalDecayTrees.AbstractMeasureInstruction end
+
+function InstructionalDecayTrees.apply_decay_instruction(
+    ::RecordState{Tag},
+    state,
+) where {Tag}
+    return (state, NamedTuple{(Tag,)}((state,)))
+end</code></pre><p>Two independent paths execute the common transform twice:</p><pre><code class="language-julia hljs">counter = Ref(0)
+step = CountStep(counter)
+
+apply_decay_instruction((step, RecordState{:left}()), 0)
+apply_decay_instruction((step, RecordState{:right}()), 0)
+
+@assert counter[] == 2
+counter[]</code></pre><pre><code class="nohighlight hljs">2</code></pre><p>Putting the transform before a fork executes it once, while both branches observe the transformed state:</p><pre><code class="language-julia hljs">counter[] = 0
+counted_program = (
+    step,
+    Fork((
+        (RecordState{:left}(),),
+        (RecordState{:right}(),),
+    )),
+)
+
+final_state, counted_results =
+    apply_decay_instruction(counted_program, 0)
+
+@assert counter[] == 1
+@assert final_state == 1
+@assert counted_results == (left = 1, right = 1)
+(transforms = counter[], results = counted_results)</code></pre><pre><code class="nohighlight hljs">(transforms = 1, results = (left = 1, right = 1))</code></pre><p>For a chain with <span>$N$</span> vertices, independent root-to-vertex paths repeat roughly <span>$0 + 1 + \cdots + (N - 1)$</span> frame descents. A nested forked program can visit each tree edge once instead.</p><h2 id="Branch-and-result-semantics"><a class="docs-heading-anchor" href="#Branch-and-result-semantics">Branch and result semantics</a><a id="Branch-and-result-semantics-1"></a><a class="docs-heading-anchor-permalink" href="#Branch-and-result-semantics" title="Permalink"></a></h2><p>Branches run in tuple order and may contain instructions, tuples, <a href="../api/#InstructionalDecayTrees.CompositeInstruction"><code>CompositeInstruction</code></a>s, or nested forks. Measurements are merged into one flat <code>NamedTuple</code>. Tags must be unique throughout a program containing a fork; duplicate tags raise <code>ArgumentError</code>.</p><p>Each branch starts from <a href="../api/#InstructionalDecayTrees.fork_branch_state-Tuple{Any}"><code>fork_branch_state</code></a> applied to the parent state. The default is <code>deepcopy</code>, which protects mutable backend states from sibling changes. This function is public because it is a backend extension point: immutable or persistent-state backends may overload it to return the original state. Ordinary application code does not need to call it.</p><p>The program tree and state flow retain concrete tuple types, so Julia can specialize on a statically shaped fork. Built-in measurement tags are runtime <code>Symbol</code>s, however, so the exact <code>NamedTuple</code> field names are not encoded in the measurement instruction type. That inference boundary also applies to linear programs; it is not introduced by <code>Fork</code>. Backends that encode tags as type parameters, like <code>RecordState</code> above, can infer the complete result shape.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api/">API reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 7 August 2026 21:31">Friday 7 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
