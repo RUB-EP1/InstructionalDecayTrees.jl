@@ -67,13 +67,13 @@ end
 makedocs(;
     modules = [InstructionalDecayTrees],
     authors = "Mikhail Mikhasenko and contributors",
-    repo = "https://github.com/mmikhasenko/InstructionalDecayTrees.jl/blob/{commit}{path}#{line}",
+    repo = "https://github.com/RUB-EP1/InstructionalDecayTrees.jl/blob/{commit}{path}#{line}",
     sitename = "InstructionalDecayTrees.jl",
-    doctest = false,
-    checkdocs = :none,
+    doctest = true,
+    checkdocs = :exports,
     format = Documenter.HTML(;
-        canonical = "https://mmikhasenko.github.io/InstructionalDecayTrees.jl",
-        repolink = "https://github.com/mmikhasenko/InstructionalDecayTrees.jl",
+        canonical = "https://rub-ep1.github.io/InstructionalDecayTrees.jl",
+        repolink = "https://github.com/RUB-EP1/InstructionalDecayTrees.jl",
     ),
     pages = [
         "Home" => "index.md",
@@ -86,7 +86,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo = "github.com/mmikhasenko/InstructionalDecayTrees.jl",
+    repo = "github.com/RUB-EP1/InstructionalDecayTrees.jl",
     root = DOCS,
     target = "build",
     versions = ["v#.#.#", "dev" => "dev"],
