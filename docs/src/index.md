@@ -100,6 +100,44 @@ ToHelicityFrame((1, -2, 3))      # objs[1] + (-objs[2]) + objs[3]
   [`MeasureMassCosThetaPhi`](@ref), and [`MeasureInvariant`](@ref) store
   kinematic quantities in the returned `NamedTuple`.
 
+### Carried helicity axes
+
+[`ToHelicityFrame`](@ref) realigns the frame at every step, so the helicity ẑ is
+always `(0,0,1)` and nothing has to be remembered. The alternative — used by
+TF-PWA — is to boost *without* realigning and carry the axes along as data:
+
+```julia
+ToHelicityFrame  ==  ToRestFrame |> Rz(-ϕ) |> Ry(-θ)
+```
+
+Those two rotations are the entire difference. [`ToRestFrame`](@ref) is the pure
+boost; the alignment rotation it declines to apply is instead recorded in a
+[`HelicityAxes`](@ref) marker, which occupies a slot of `objs` added by
+[`with_helicity_axes`](@ref) and is inert under pure boosts. The same program
+written the other way:
+
+```julia
+program = (
+    PlantLabAxes(5),                # ẑ=(0,0,1), x̂=(1,0,0)   [axes planted]
+    ToRestFrame((1, 2, 3, 4)),      # pure boost              [total rest frame]
+    TransportAxes(5, (1, 2, 3)),    # carry axes onto (1,2,3) [one vertex]
+    ToRestFrame((1, 2, 3)),         # pure boost              [(1,2,3) rest frame]
+    MeasureEulerZXZ(:v, (1, 2), 5), # (α, β) against carried axes
+)
+final_objs, results = apply_decay_instruction(program, with_helicity_axes(objs))
+```
+
+- [`ToRestFrame`](@ref): pure boost, no realignment — see [`boost_to_rest`](@ref).
+- [`PlantLabAxes`](@ref): write the starting ẑ, x̂ convention into a slot.
+- [`TransportAxes`](@ref): carry `(ẑ, x̂)` across one decay vertex.
+- [`MeasureEulerZXZ`](@ref): [`MeasureCosThetaPhi`](@ref) against the carried
+  axes; `α` plays the role of `ϕ` and `β` of `θ`, via [`euler_zxz`](@ref).
+
+Both routes give the same angles. The carried-axis form is useful when comparing
+against frameworks that build angles this way, and when the parent is at rest —
+a pure boost with `γ = 1` is exactly the identity, whereas realigning applies the
+undefined `ϕ`, `θ` of a null three-momentum.
+
 ### Tracked Lorentz execution
 
 For topology cross-checks, run instruction paths on a [`TrackedState`](@ref) to
